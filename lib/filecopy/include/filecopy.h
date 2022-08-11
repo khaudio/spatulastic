@@ -10,7 +10,7 @@
 
 
 
-#define CHUNKSIZE    3
+#define CHUNKSIZE       (1024 * 1024)
 
 
 enum file_mover_err
@@ -24,17 +24,19 @@ enum file_mover_err
 class FileMover
 {
 protected:
+
+    bool _firstWritten, _lastBuff, _lastWritten;
     size_t _numBytesReadToBuffer, _numBytesWrittenFromBuffer;
+    char _inPath[4096], _outPath[4096];
+    char _tempReadBuff[CHUNKSIZE], _tempWriteBuff[CHUNKSIZE];
+
     std::ifstream _inStream;
     std::ofstream _outStream;
-    char _inPath[4096], _outPath[4096];
+
     Buffer::RingBuffer<char> _buff;
-    char _tempReadBuff[CHUNKSIZE], _tempWriteBuff[CHUNKSIZE];
-    bool _firstRead, _firstWritten, _lastBuff, _lastWritten;
-    
-    void _print_status();
-    
+
 public:
+
     bool started;
 
     FileMover();
