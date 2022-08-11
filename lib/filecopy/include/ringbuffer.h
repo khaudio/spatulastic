@@ -9,7 +9,7 @@
 #include <limits>
 #include <vector>
 
-#include "AudioUtils.h"
+#include "audioutils.h"
 
 enum ringbuffer_err
 {

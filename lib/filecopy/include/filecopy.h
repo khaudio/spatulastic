@@ -2,7 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <iostream>
-#include "RingBuffer.h"
+#include "ringbuffer.h"
 
 #ifndef DEBUG
 #define DEBUG

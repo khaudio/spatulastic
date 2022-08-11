@@ -9,7 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
-#include "int_audio.h"
+#include "intaudio.h"
 
 #include <iomanip>
 

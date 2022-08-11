@@ -1,4 +1,4 @@
-#include "AudioUtils.h"
+#include "audioutils.h"
 
 template <typename T>
 inline void clip_float(T* value)

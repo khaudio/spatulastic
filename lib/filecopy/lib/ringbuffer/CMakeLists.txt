@@ -1,23 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
 
-# Project name and version
-project(spatulastic VERSION 0.1 LANGUAGES CXX)
+add_library(ringbuffer src/ringbuffer.cpp)
 
 # C++ Standard
 set(CMAKE_CXX_STANDARAD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-configure_file(cmakeconfig.h.in cmakeconfig.h)
+add_subdirectory(lib/audioutils)
 
-# Executable
-add_executable(${PROJECT_NAME} src/main.cpp)
+list(APPEND EXTRA_LIBS audioutils)
 
-add_subdirectory(lib/filecopy)
-add_subdirectory(lib/progressbar)
-
-list(APPEND EXTRA_LIBS filecopy progressbar)
-
-target_compile_options(${PROJECT_NAME}
+target_compile_options(ringbuffer
     PRIVATE
         -std=c++17
     PUBLIC
@@ -25,7 +18,7 @@ target_compile_options(${PROJECT_NAME}
         "$<$<CONFIG:Release>:>"
 )
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories(ringbuffer
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 
@@ -37,7 +30,7 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(ringbuffer
     PRIVATE
         ${EXTRA_LIBS}
     PUBLIC
