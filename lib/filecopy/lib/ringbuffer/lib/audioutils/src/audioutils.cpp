@@ -193,8 +193,8 @@ inline void pack_data(uint8_t* packed, T* padded, int width)
     constexpr int maxsize(sizeof(int_fast32_t));
     if (!width || (width > maxsize))
     {
-        char message[128];
-        sprintf(message, "Width must be 0 < width < %d", maxsize);
+        std::cerr << "Width must be 0 < width < ";
+        std::cerr << maxsize << std::endl;
     }
     #endif
 
@@ -209,8 +209,8 @@ void pack_data(uint8_t* packed, int_audio* padded, int width)
     constexpr int maxsize(sizeof(int_fast32_t));
     if (!width || (width > maxsize))
     {
-        char message[128];
-        sprintf(message, "Width must be 0 < width <= %d", maxsize);
+        std::cerr << "Width must be 0 < width <= ";
+        std::cerr << maxsize << std::endl;
     }
     #endif
 
@@ -224,8 +224,8 @@ inline void unpack_data(T* padded, uint8_t* packed, int width)
     constexpr int maxsize(sizeof(int_fast32_t));
     if (!width || (width > maxsize))
     {
-        char message[128];
-        sprintf(message, "Width must be 0 < width <= %d", maxsize);
+        std::cerr << "Width must be 0 < width <= ";
+        std::cerr << maxsize << std::endl;
     }
     #endif
     
@@ -241,8 +241,8 @@ void unpack_data(int_audio* padded, uint8_t* packed, int width)
     constexpr int maxsize(sizeof(int_fast32_t));
     if (!width || (width > maxsize))
     {
-        char message[128];
-        sprintf(message, "Width must be 0 < width < %d", maxsize);
+        std::cerr << "Width must be 0 < width < ";
+        std::cerr << maxsize << std::endl;
     }
     #endif
 
@@ -343,7 +343,6 @@ void get_random_str(
     }
     buff[length] = '\0';
 }
-
 
 template <typename T>
 T get_max(uint8_t* values, size_t numBytes, int width)

@@ -9,7 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 target_compile_options(intaudio
     PRIVATE
         -std=c++17
+        "$<$<CONFIG:Debug>:/DO0;/DWall;/DWerror;/D_DEBUG>"
+        "$<$<CONFIG:Release>:>"
     PUBLIC
+        -std=c++17
         "$<$<CONFIG:Debug>:/DO0;/DWall;/DWerror;/D_DEBUG>"
         "$<$<CONFIG:Release>:>"
 )

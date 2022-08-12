@@ -466,19 +466,19 @@ union int_audio
 
     inline int_audio& operator*=(const float& value)
     {
-        *this = (*this * value);
+        *this = (static_cast<float>(*this) * value);
         return *this;
     }
 
     inline int_audio& operator*=(const double& value)
     {
-        *this = (*this * value);
+        *this = (static_cast<double>(*this) * value);
         return *this;
     }
 
     inline int_audio& operator*=(const long double& value)
     {
-        *this = (*this * value);
+        *this = (static_cast<long double>(*this) * value);
         return *this;
     }
 
@@ -490,19 +490,19 @@ union int_audio
 
     inline int_audio& operator/=(const float& value)
     {
-        *this = (*this / value);
+        *this = (static_cast<float>(*this) / value);
         return *this;
     }
 
     inline int_audio& operator/=(const double& value)
     {
-        *this = (*this / value);
+        *this = (static_cast<double>(*this) / value);
         return *this;
     }
 
     inline int_audio& operator/=(const long double& value)
     {
-        *this = (*this / value);
+        *this = (static_cast<long double>(*this) / value);
         return *this;
     }
 

@@ -345,4 +345,16 @@ template class Buffer::RingBuffer<float>;
 template class Buffer::RingBuffer<double>;
 template class Buffer::RingBuffer<long double>;
 
+template class Buffer::RingBuffer<int_fast8_t>;
+template class Buffer::RingBuffer<int_fast16_t>;
+template class Buffer::RingBuffer<int_fast32_t>;
+template class Buffer::RingBuffer<int_fast64_t>;
+
+template class Buffer::RingBuffer<int_least8_t>;
+template class Buffer::RingBuffer<int_least16_t>;
+template class Buffer::RingBuffer<int_least32_t>;
+template class Buffer::RingBuffer<int_least64_t>;
+
 template class Buffer::RingBuffer<char>;
+template class Buffer::RingBuffer<char16_t>;
+template class Buffer::RingBuffer<char32_t>;

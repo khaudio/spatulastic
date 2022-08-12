@@ -13,7 +13,10 @@ list(APPEND EXTRA_LIBS audioutils)
 target_compile_options(ringbuffer
     PRIVATE
         -std=c++17
+        "$<$<CONFIG:Debug>:/DO0;/DWall;/DWerror;/D_DEBUG>"
+        "$<$<CONFIG:Release>:>"
     PUBLIC
+        -std=c++17
         "$<$<CONFIG:Debug>:/DO0;/DWall;/DWerror;/D_DEBUG>"
         "$<$<CONFIG:Release>:>"
 )
