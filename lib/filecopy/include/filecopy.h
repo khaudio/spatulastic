@@ -1,11 +1,10 @@
 #include <fstream>
-#include <thread>
 
 #include "ringbuffer.h"
 
-
-#define CHUNKSIZE       (1024 * 1024)
-
+#ifndef RING_BUFFER_CHUNKSIZE
+    #define RING_BUFFER_CHUNKSIZE           ((1024)*(1024))
+#endif
 
 enum file_mover_err
 {
@@ -19,10 +18,11 @@ class FileCopy
 {
 protected:
 
-    bool _firstWritten, _lastBuff, _lastWritten;
+    bool _firstWritten;
+
     size_t _numBytesReadToBuffer, _numBytesWrittenFromBuffer;
+
     char _inPath[4096], _outPath[4096];
-    char _tempReadBuff[CHUNKSIZE], _tempWriteBuff[CHUNKSIZE];
 
     std::ifstream _inStream;
     std::ofstream _outStream;
@@ -42,14 +42,10 @@ public:
     
     bool ready();
     bool complete();
-    
+
     size_t bytes_remaining();
-    
-    size_t _read_to_buffer();
-    size_t read_loop();
-    
-    size_t _write_from_buffer();
-    size_t write_loop();
-    
+
+    size_t read_to_buffer();
+    size_t write_from_buffer();
     size_t execute();
 };

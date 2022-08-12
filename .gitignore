@@ -1,4 +1,5 @@
 *.DS_Store
 *.vscode
+*sftp.json
 demo_write_out.txt
 build/

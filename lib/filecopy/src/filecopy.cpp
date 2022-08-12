@@ -3,11 +3,9 @@
 
 FileCopy::FileCopy() :
 _firstWritten(false),
-_lastBuff(false),
-_lastWritten(false),
 _numBytesReadToBuffer(0),
 _numBytesWrittenFromBuffer(0),
-_buff(CHUNKSIZE, 4),
+_buff(RING_BUFFER_CHUNKSIZE, 4),
 started(false)
 {
 }
@@ -19,6 +17,7 @@ FileCopy::~FileCopy()
 
 bool FileCopy::ready()
 {
+    /* Indicates if both files are open and ready to transfer */
     return (this->_inStream.is_open() && this->_outStream.is_open());
 }
 
@@ -53,118 +52,85 @@ bool FileCopy::complete()
         );
 }
 
-size_t FileCopy::_read_to_buffer()
+size_t FileCopy::read_to_buffer()
 {
+    /* Copies data from the source to the ring buffer */
     size_t numBytesRead;
     
     if (!this->_inStream.is_open()) return 0;
-    
-    this->_inStream.read(this->_tempReadBuff, this->_buff.bufferLength);
-    
+
+    char* bufferWriteByte = reinterpret_cast<char*>(this->_buff.get_write_byte());
+    this->_inStream.read(bufferWriteByte, this->_buff.bufferLength);
+
     numBytesRead = this->_inStream.gcount();
     
     if (!numBytesRead)
     {
         this->_inStream.close();
     }
-    else if (numBytesRead == this->_buff.bufferLength)
-    {
-        this->_buff.write(this->_tempReadBuff, numBytesRead);
-    }
     else
     {
-        this->_lastBuff = true;
+        this->_buff.rotate_partial_write(numBytesRead);
     }
 
     this->_numBytesReadToBuffer += numBytesRead;
-    
+
     return numBytesRead;
 }
 
-size_t FileCopy::read_loop()
+size_t FileCopy::write_from_buffer()
 {
-    while (!complete())
-    {
-        _read_to_buffer();
-        std::this_thread::yield();
-    }
-    return this->_numBytesReadToBuffer;
-}
-
-size_t FileCopy::_write_from_buffer()
-{
-    size_t numBytesWritten(0);
-    size_t beforePosition, afterPosition(0);
+    /* Writes from the buffer out to the destination */
+    size_t beforePosition, afterPosition(0), numBytesWritten(0);
     
+    if (!this->_outStream.is_open()) return 0;
+
     beforePosition = this->_outStream.tellp();
 
-    if (
-            !this->_inStream.is_open()
-            && (this->_buff.buffered() >= this->_buff.bufferLength)
-        )
-    {
-        this->_buff.read(this->_tempWriteBuff, this->_buff.bufferLength);
-        
-        this->_outStream.write(this->_tempWriteBuff, this->_buff.bufferLength);
-        afterPosition = this->_outStream.tellp();
-    }
-    else if (this->_lastBuff && !this->_lastWritten && !this->_buff.buffered())
-    {
-        this->_outStream.write(this->_tempReadBuff, bytes_remaining());
-        afterPosition = this->_outStream.tellp();
-        this->_lastWritten = true;
-    }
-    else if (this->_buff.buffered())
+    if (this->_buff.buffered() > 0)
     {
         if (!this->_firstWritten)
         {
-            this->_buff.rotate_read_buffer();
-            this->_buff._buffered += this->_buff.bufferLength;
+            this->_buff.rotate_read_index();
             this->_firstWritten = true;
         }
-        this->_buff.read(this->_tempWriteBuff, this->_buff.bufferLength);
-        this->_outStream.write(this->_tempWriteBuff, this->_buff.bufferLength);
+
+        int numBytesBuffered = (
+                (this->_buff.buffered() >= this->_buff.bufferLength)
+                ? this->_buff.bufferLength
+                : this->_buff.buffered()
+            );
+
+        char* bufferReadByte = reinterpret_cast<char*>(this->_buff.get_read_byte());
+        this->_outStream.write(bufferReadByte, numBytesBuffered);
         afterPosition = this->_outStream.tellp();
-    }
-    
-    if (this->_outStream.is_open() && (afterPosition > beforePosition))
-    {
         numBytesWritten += (afterPosition - beforePosition);
+        this->_buff.rotate_partial_read(numBytesWritten);
         this->_numBytesWrittenFromBuffer += numBytesWritten;
     }
-    else if ((afterPosition < beforePosition) || this->_lastWritten)
+
+    if (this->_outStream.is_open() && (afterPosition < beforePosition))
     {
         this->_outStream.close();
     }
-    
-    return numBytesWritten;
-}
 
-size_t FileCopy::write_loop()
-{
-    while (!complete())
-    {
-        _write_from_buffer();
-        std::this_thread::yield();
-    }
-    return this->_numBytesWrittenFromBuffer;
+    return numBytesWritten;
 }
 
 size_t FileCopy::execute()
 {
+    /* Executes copy and blocks until transfer is complete */
     this->started = true;
-    
+
     while (this->_buff.available() && this->_inStream.is_open())
     {
-        _read_to_buffer();
+        read_to_buffer();
     }
     while (!complete())
     {
-        _write_from_buffer();
-        _read_to_buffer();
+        write_from_buffer();
+        read_to_buffer();
     }
-    
-    close();
     
     #ifdef _DEBUG
     if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)

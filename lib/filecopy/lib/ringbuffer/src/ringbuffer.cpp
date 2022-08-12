@@ -27,11 +27,17 @@ Ring(),
 _buffered(0),
 _samplesWritten(0),
 _samplesRemaining(bufferSize),
+_samplesProcessed(0),
 bufferLength(bufferSize),
 bytesPerBuffer(bufferSize * sizeof(T)),
 readIndex(0),
-writeIndex(1)
+writeIndex(1),
+processingIndex(0)
 {
+    #if _DEBUG
+    if (ringSize < 2) throw RING_SIZE_TOO_SHORT;
+    #endif
+
     this->ringLength = ringSize;
     this->totalRingSampleLength = this->ringLength * this->bufferLength;
     this->_totalWritableLength = this->totalRingSampleLength - this->bufferLength;
@@ -45,6 +51,10 @@ writeIndex(1)
             this->ring[i].emplace_back(_zero);
         }
     }
+    for (int i(0); i < this->ringLength; ++i)
+    {
+        this->bufferProcessedState.emplace(std::make_pair(i, false));
+    }
 }
 
 template <typename T>
@@ -53,7 +63,7 @@ RingBuffer<T>::~RingBuffer()
 }
 
 template <typename T>
-bool RingBuffer<T>::_size_is_set()
+inline bool RingBuffer<T>::_size_is_set()
 {
     return (this->bufferLength && this->ringLength);
 }
@@ -95,12 +105,18 @@ size_t RingBuffer<T>::size()
 template <typename T>
 void RingBuffer<T>::zero_fill()
 {
-    for (int i(0); i < this->ringLength; ++i)
+    /* Fill all the buffers with zero */
+    for (int i(0); i < this->bufferLength; ++i)
     {
-        for (int j(0); j < this->bufferLength; ++j)
-        {
-            this->ring[i][j] = this->_zero;
-        }
+        this->ring[0][i] = this->_zero;
+    }
+    for (int i(1); i < this->ringLength; ++i)
+    {
+        std::copy(
+                this->ring[0].begin(),
+                this->ring[0].end(),
+                this->ring[i].begin()
+            );
     }
 }
 
@@ -109,26 +125,42 @@ int RingBuffer<T>::buffered()
 {
     /* Total number of unread samples buffered,
     excluding the current write buffer */
-    return (this->_buffered / this->bufferLength) * this->bufferLength;
+    return this->_buffered;
+}
+
+template <typename T>
+int RingBuffer<T>::processed()
+{
+    /* Total number of samples processed */
+    return this->_samplesProcessed;
 }
 
 template <typename T>
 int RingBuffer<T>::available()
 {
-    /* Total number of samples unbuffered, not including read buffer */
+    /* Total number of samples unbuffered,
+    excluding current read buffer */
     return this->_totalWritableLength - this->_buffered;
 }
 
 template <typename T>
-int RingBuffer<T>::sub_buffers_full()
+int RingBuffer<T>::buffers_full()
 {
     /* Total number of unread readable buffers */
     return (this->_buffered / this->bufferLength);
 }
 
 template <typename T>
+int RingBuffer<T>::buffers_processed()
+{
+    /* Total number of unread readable buffers */
+    return (this->_samplesProcessed / this->bufferLength);
+}
+
+template <typename T>
 bool RingBuffer<T>::is_writable()
 {
+    /* Checks bounds to prevent buffer collisions */
     #ifdef _DEBUG
     if (!_size_is_set()) throw BUFFER_NOT_INITIALIZED;
     #endif
@@ -137,15 +169,47 @@ bool RingBuffer<T>::is_writable()
 }
 
 template <typename T>
-void RingBuffer<T>::rotate_read_buffer(bool force)
+inline void RingBuffer<T>::rotate_read_index()
 {
-    /* Rotates read buffer and forces write buffer forward if overrun */
+    /* Rotate read index wihtout changing sample counters */
     if (++this->readIndex >= this->ringLength)
     {
         this->readIndex = 0;
     }
+}
+
+template <typename T>
+inline void RingBuffer<T>::rotate_write_index()
+{
+    /* Rotate write index wihtout changing sample counters */
+    if (++this->writeIndex >= this->ringLength)
+    {
+        this->writeIndex = 0;
+    }
+}
+
+template <typename T>
+inline void RingBuffer<T>::rotate_processing_index()
+{
+    /* Rotate processing index wihtout changing sample counters */
+    if (++this->processingIndex >= this->ringLength)
+    {
+        this->processingIndex = 0;
+    }
+}
+
+template <typename T>
+void RingBuffer<T>::rotate_read_buffer(bool force)
+{
+    /* Rotates read buffer and forces write buffer forward if overrun */
+    rotate_read_index();
     this->_buffered -= this->bufferLength;
     this->_buffered = (this->_buffered < 0) ? 0 : this->_buffered;
+    this->_samplesProcessed -= this->bufferLength;
+    this->_samplesProcessed = (
+            (this->_samplesProcessed < 0)
+            ? 0 : this->_samplesProcessed
+        );
     if (force && !is_writable())
     {
         rotate_write_buffer();
@@ -155,13 +219,12 @@ void RingBuffer<T>::rotate_read_buffer(bool force)
 template <typename T>
 void RingBuffer<T>::rotate_write_buffer(bool force)
 {
-    if (++this->writeIndex >= this->ringLength)
-    {
-        this->writeIndex = 0;
-    }
+    /* Rotates write buffer and forces read buffer forward if overrun */
+    rotate_write_index();
     this->_samplesWritten = 0;
     this->_samplesRemaining = this->bufferLength;
     this->_buffered += this->bufferLength;
+    _set_buffer_processed(this->writeIndex, false);
     if (force && !is_writable())
     {
         rotate_read_buffer();
@@ -169,15 +232,118 @@ void RingBuffer<T>::rotate_write_buffer(bool force)
 }
 
 template <typename T>
+void RingBuffer<T>::rotate_processing_buffer()
+{
+    /* Marks buffer as processed and advances the processing index */
+    _set_buffer_processed(this->processingIndex, true);
+    this->_samplesProcessed += this->bufferLength;
+    rotate_processing_index();
+}
+
+template <typename T>
+void RingBuffer<T>::rotate_partial_read(unsigned int length, bool force)
+{
+    #if _DEBUG
+    if (length > this->bufferLength) throw std::out_of_range("Length must be <= buffer length");
+    #endif
+
+    rotate_read_index();
+    this->_buffered -= length;
+    this->_buffered = (this->_buffered < 0) ? 0 : this->_buffered;
+    this->_samplesProcessed -= length;
+    this->_samplesProcessed = (
+            (this->_samplesProcessed < 0)
+            ? 0 : this->_samplesProcessed
+        );
+    if (force && !is_writable())
+    {
+        rotate_write_buffer();
+    }
+}
+
+template <typename T>
+void RingBuffer<T>::rotate_partial_write(unsigned int length, bool force)
+{
+    #if _DEBUG
+    if (length > this->bufferLength) throw std::out_of_range("Length must be <= buffer length");
+    #endif
+
+    rotate_write_index();
+    this->_samplesWritten = 0;
+    this->_samplesRemaining = this->bufferLength;
+    this->_buffered += length;
+    this->_buffered = (
+            (this->_buffered > this->_totalWritableLength)
+            ? this->bufferLength : this->_buffered
+        );
+    _set_buffer_processed(this->writeIndex, false);
+    if (force && !is_writable())
+    {
+        rotate_read_buffer();
+    }
+}
+
+template <typename T>
+inline uint8_t RingBuffer<T>::get_ring_index(std::vector<T>* bufferPtr)
+{
+    /* Returns ring index for buffer at pointer */
+    #ifdef _DEBUG
+    if (!_size_is_set()) throw BUFFER_NOT_INITIALIZED;
+    #endif
+
+    for (uint8_t i(0); i < this->ringLength; ++i)
+    {
+        if (&(this->ring[i]) == bufferPtr)
+        {
+            return i;
+        }
+    }
+
+    #if _DEBUG
+    throw std::out_of_range("Buffer not found");
+    #endif
+}
+
+template <typename T>
+inline uint8_t RingBuffer<T>::get_ring_index(uint8_t* bufferPtr)
+{
+    /* Returns ring index for buffer beginning at pointer */
+    #ifdef _DEBUG
+    if (!_size_is_set()) throw BUFFER_NOT_INITIALIZED;
+    #endif
+
+    for (uint8_t i(0); i < this->ringLength; ++i)
+    {
+        if (reinterpret_cast<uint8_t*>(&(this->ring[i][0])) == bufferPtr)
+        {
+            return i;
+        }
+    }
+
+    #if _DEBUG
+    throw std::out_of_range("Buffer not found");
+    #endif
+}
+
+template <typename T>
 inline std::vector<T>* RingBuffer<T>::get_read_buffer()
 {
+    /* Returns pointer to current read buffer */
     return &(this->ring[this->readIndex]);
 }
 
 template <typename T>
 inline std::vector<T>* RingBuffer<T>::get_write_buffer()
 {
+    /* Returns pointer to current write buffer */
     return &(this->ring[this->writeIndex]);
+}
+
+template <typename T>
+std::vector<T>* RingBuffer<T>::get_processing_buffer()
+{
+    /* Returns pointer to current processing buffer */
+    return &(this->ring[this->processingIndex]);
 }
 
 template <typename T>
@@ -195,6 +361,15 @@ inline uint8_t* RingBuffer<T>::get_write_byte()
     /* Returns pointer to first byte of current write buffer */
     return reinterpret_cast<uint8_t*>(
             &(this->ring[this->writeIndex][0])
+        );
+}
+
+template <typename T>
+uint8_t* RingBuffer<T>::get_processing_byte()
+{
+    /* Returns pointer to first byte of current processing buffer */
+    return reinterpret_cast<uint8_t*>(
+            &(this->ring[this->processingIndex][0])
         );
 }
 
@@ -221,6 +396,7 @@ const std::vector<T> RingBuffer<T>::read(bool force)
 template <typename T>
 void RingBuffer<T>::read_bytes(uint8_t* data, size_t numBytes, bool force)
 {
+    /* Copies data from read buffer to data pointer */
     #ifdef _DEBUG
     if (!_size_is_set()) throw BUFFER_NOT_INITIALIZED;
     #endif
@@ -237,8 +413,9 @@ void RingBuffer<T>::read_bytes(uint8_t* data, size_t numBytes, bool force)
 }
 
 template <typename T>
-void RingBuffer<T>::read(T* data, size_t length, bool force)
+void RingBuffer<T>::read_samples(T* data, size_t length, bool force)
 {
+    /* Read specified number of samples */
     #ifdef _DEBUG
     if (!_size_is_set()) throw BUFFER_NOT_INITIALIZED;
     #endif
@@ -252,7 +429,6 @@ void RingBuffer<T>::read(T* data, size_t length, bool force)
     
     rotate_read_buffer(force);
 }
-
 
 template <typename T>
 int RingBuffer<T>::write(T data, bool force)
@@ -269,7 +445,7 @@ int RingBuffer<T>::write(T data, bool force)
     {
         rotate_write_buffer();
     }
-    ++this->_buffered;
+    // ++this->_buffered;
     return 1;
 }
 
@@ -326,10 +502,57 @@ size_t RingBuffer<T>::write_bytes(uint8_t* data, size_t numBytes, bool force)
 }
 
 template <typename T>
-size_t RingBuffer<T>::write(T* data, size_t length, bool force)
+size_t RingBuffer<T>::write_samples(T* data, size_t length, bool force)
 {
+    /* Write specified number of samples */
     std::vector<T> converted(data, data + length);
     return write(converted, force);
+}
+
+template <typename T>
+inline void RingBuffer<T>::_set_buffer_processed(uint8_t ringIndex, bool state)
+{
+    /* Set whether a specified buffer has been processed or not */
+    #if _DEBUG
+    if (ringIndex >= this->ringLength) throw std::out_of_range("Buffer not found");
+    #endif
+
+    this->bufferProcessedState[ringIndex] = state;
+}
+
+template <typename T>
+void RingBuffer<T>::set_buffer_processed(std::vector<T>* bufferPtr, bool state)
+{
+    /* Set whether the specified buffer has been processed */
+    _set_buffer_processed(get_ring_index(bufferPtr), state);
+}
+
+template <typename T>
+void RingBuffer<T>::set_buffer_processed(uint8_t* bufferPtr, bool state)
+{
+    /* Set whether the specified buffer has been processed */
+    _set_buffer_processed(get_ring_index(bufferPtr), state);
+}
+
+template <typename T>
+bool RingBuffer<T>::_buffer_processed(uint8_t ringIndex)
+{
+    /* Returns whether the specified buffer has been processed */
+    return this->bufferProcessedState[ringIndex];
+}
+
+template <typename T>
+bool RingBuffer<T>::buffer_processed(std::vector<T>* bufferPtr)
+{
+    /* Returns whether the specified buffer has been processed */
+    return _buffer_processed(get_ring_index(bufferPtr));
+}
+
+template <typename T>
+bool RingBuffer<T>::buffer_processed(uint8_t* bufferPtr)
+{
+    /* Returns whether the specified buffer has been processed */
+    return _buffer_processed(get_ring_index(bufferPtr));
 }
 
 template class Buffer::RingBuffer<int8_t>;
@@ -344,16 +567,6 @@ template class Buffer::RingBuffer<int_audio>;
 template class Buffer::RingBuffer<float>;
 template class Buffer::RingBuffer<double>;
 template class Buffer::RingBuffer<long double>;
-
-template class Buffer::RingBuffer<int_fast8_t>;
-template class Buffer::RingBuffer<int_fast16_t>;
-template class Buffer::RingBuffer<int_fast32_t>;
-template class Buffer::RingBuffer<int_fast64_t>;
-
-template class Buffer::RingBuffer<int_least8_t>;
-template class Buffer::RingBuffer<int_least16_t>;
-template class Buffer::RingBuffer<int_least32_t>;
-template class Buffer::RingBuffer<int_least64_t>;
 
 template class Buffer::RingBuffer<char>;
 template class Buffer::RingBuffer<char16_t>;
