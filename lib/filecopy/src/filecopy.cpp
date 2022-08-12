@@ -1,7 +1,7 @@
 #include "filecopy.h"
 
 
-FileMover::FileMover() :
+FileCopy::FileCopy() :
 _firstWritten(false),
 _lastBuff(false),
 _lastWritten(false),
@@ -12,38 +12,38 @@ started(false)
 {
 }
 
-FileMover::~FileMover()
+FileCopy::~FileCopy()
 {
     close();
 }
 
-bool FileMover::ready()
+bool FileCopy::ready()
 {
     return (this->_inStream.is_open() && this->_outStream.is_open());
 }
 
-void FileMover::open_source(const char* filepath)
+void FileCopy::open_source(const char* filepath)
 {
     this->_inStream.open(filepath, std::ios::binary);
 }
 
-void FileMover::open_dest(const char* filepath)
+void FileCopy::open_dest(const char* filepath)
 {
     this->_outStream.open(filepath, std::ios::binary);
 }
 
-void FileMover::close()
+void FileCopy::close()
 {
     this->_inStream.close();
     this->_outStream.close();
 }
 
-size_t FileMover::bytes_remaining()
+size_t FileCopy::bytes_remaining()
 {
     return this->_numBytesReadToBuffer - this->_numBytesWrittenFromBuffer;
 }
 
-bool FileMover::complete()
+bool FileCopy::complete()
 {
     return (
             this->started
@@ -53,7 +53,7 @@ bool FileMover::complete()
         );
 }
 
-size_t FileMover::_read_to_buffer()
+size_t FileCopy::_read_to_buffer()
 {
     size_t numBytesRead;
     
@@ -81,7 +81,7 @@ size_t FileMover::_read_to_buffer()
     return numBytesRead;
 }
 
-size_t FileMover::read_loop()
+size_t FileCopy::read_loop()
 {
     while (!complete())
     {
@@ -91,7 +91,7 @@ size_t FileMover::read_loop()
     return this->_numBytesReadToBuffer;
 }
 
-size_t FileMover::_write_from_buffer()
+size_t FileCopy::_write_from_buffer()
 {
     size_t numBytesWritten(0);
     size_t beforePosition, afterPosition(0);
@@ -140,7 +140,7 @@ size_t FileMover::_write_from_buffer()
     return numBytesWritten;
 }
 
-size_t FileMover::write_loop()
+size_t FileCopy::write_loop()
 {
     while (!complete())
     {
@@ -150,7 +150,7 @@ size_t FileMover::write_loop()
     return this->_numBytesWrittenFromBuffer;
 }
 
-size_t FileMover::execute()
+size_t FileCopy::execute()
 {
     this->started = true;
     

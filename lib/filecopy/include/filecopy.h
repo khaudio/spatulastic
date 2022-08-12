@@ -1,13 +1,7 @@
 #include <fstream>
-#include <iostream>
 #include <thread>
-#include <iostream>
+
 #include "ringbuffer.h"
-
-#ifndef DEBUG
-#define DEBUG
-#endif
-
 
 
 #define CHUNKSIZE       (1024 * 1024)
@@ -21,7 +15,7 @@ enum file_mover_err
 };
 
 
-class FileMover
+class FileCopy
 {
 protected:
 
@@ -39,8 +33,8 @@ public:
 
     bool started;
 
-    FileMover();
-    ~FileMover();
+    FileCopy();
+    ~FileCopy();
 
     void open_source(const char* filepath);
     void open_dest(const char* filepath);

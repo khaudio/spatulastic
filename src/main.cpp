@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-    FileMover fm;
+    FileCopy fm;
     
     fm.open_source("../demodata.txt");
     fm.open_dest("demo_write_out.txt");
