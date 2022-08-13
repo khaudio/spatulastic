@@ -1,4 +1,5 @@
 #include <fstream>
+#include <filesystem>
 
 #include "ringbuffer.h"
 
@@ -9,8 +10,9 @@
 enum file_mover_err
 {
     READ_WRITE_MISMATCH = 101,
-    WRITEFILE_OVERFLOW = 102,
-    BUFFERED_DATA_MISMATCH = 103,
+    FILESIZE_MISMATCH = 102,
+    WRITEFILE_OVERFLOW = 103,
+    BUFFERED_DATA_MISMATCH = 104,
 };
 
 
@@ -20,9 +22,13 @@ protected:
 
     bool _firstWritten;
 
-    size_t _numBytesReadToBuffer, _numBytesWrittenFromBuffer;
+    size_t
+        _sourceSizeInBytes,
+        _destSizeInBytes,
+        _numBytesReadToBuffer,
+        _numBytesWrittenFromBuffer;
 
-    char _inPath[4096], _outPath[4096];
+    std::filesystem::path source, dest;
 
     std::ifstream _inStream;
     std::ofstream _outStream;
@@ -35,7 +41,9 @@ public:
 
     FileCopy();
     ~FileCopy();
-
+    
+    static size_t get_file_size(const char* filepath);
+    static size_t get_file_size(std::filesystem::path filepath);
     void open_source(const char* filepath);
     void open_dest(const char* filepath);
     void close();

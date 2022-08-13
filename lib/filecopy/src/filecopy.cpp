@@ -3,6 +3,8 @@
 
 FileCopy::FileCopy() :
 _firstWritten(false),
+_sourceSizeInBytes(0),
+_destSizeInBytes(0),
 _numBytesReadToBuffer(0),
 _numBytesWrittenFromBuffer(0),
 _buff(RING_BUFFER_CHUNKSIZE, 4),
@@ -21,13 +23,30 @@ bool FileCopy::ready()
     return (this->_inStream.is_open() && this->_outStream.is_open());
 }
 
+size_t FileCopy::get_file_size(const char* filepath)
+{
+    /* Gets file size of specified filepath */
+    return std::filesystem::file_size(std::filesystem::path(filepath));
+}
+
+size_t FileCopy::get_file_size(std::filesystem::path filepath)
+{
+    /* Gets file size of specified filepath */
+    return std::filesystem::file_size(filepath);
+}
+
 void FileCopy::open_source(const char* filepath)
 {
+    /* Opens source file and gets file size */
+    this->source = filepath;
+    this->_sourceSizeInBytes = get_file_size(this->source);
     this->_inStream.open(filepath, std::ios::binary);
 }
 
 void FileCopy::open_dest(const char* filepath)
 {
+    /* Opens new destination file */
+    this->dest = filepath;
     this->_outStream.open(filepath, std::ios::binary);
 }
 
@@ -131,7 +150,16 @@ size_t FileCopy::execute()
         write_from_buffer();
         read_to_buffer();
     }
+
+    close();
     
+    this->_destSizeInBytes = get_file_size(this->dest);
+
+    if (this->_sourceSizeInBytes != this->_destSizeInBytes)
+    {
+        throw FILESIZE_MISMATCH;
+    }
+
     #ifdef _DEBUG
     if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
     {
