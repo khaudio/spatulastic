@@ -97,8 +97,7 @@ size_t FileCopy::read_to_buffer()
     /* Copies data from the source to the ring buffer */
     size_t numBytesRead;
     
-
-
+    if (!this->started) this->started = true;
     if (!this->_inStream.is_open()) return 0;
 
     char* bufferWriteByte = reinterpret_cast<char*>(this->_buff.get_write_byte());
