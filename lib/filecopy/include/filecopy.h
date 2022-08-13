@@ -19,7 +19,6 @@ enum file_mover_err
 class FileCopy
 {
 protected:
-
     bool _firstWritten;
 
     size_t
@@ -36,7 +35,6 @@ protected:
     Buffer::RingBuffer<char> _buff;
 
 public:
-
     bool started;
 
     FileCopy();
@@ -44,8 +42,13 @@ public:
     
     static size_t get_file_size(const char* filepath);
     static size_t get_file_size(std::filesystem::path filepath);
+    
     void open_source(const char* filepath);
     void open_dest(const char* filepath);
+    
+    size_t get_source_size();
+    size_t get_dest_size();
+    
     void close();
     
     bool ready();

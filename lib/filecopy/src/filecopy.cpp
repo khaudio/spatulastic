@@ -39,7 +39,7 @@ void FileCopy::open_source(const char* filepath)
 {
     /* Opens source file and gets file size */
     this->source = filepath;
-    this->_sourceSizeInBytes = get_file_size(this->source);
+    get_source_size();
     this->_inStream.open(filepath, std::ios::binary);
 }
 
@@ -48,6 +48,27 @@ void FileCopy::open_dest(const char* filepath)
     /* Opens new destination file */
     this->dest = filepath;
     this->_outStream.open(filepath, std::ios::binary);
+}
+
+size_t FileCopy::get_source_size()
+{
+    /* Get source file size */
+    if (!this->_sourceSizeInBytes)
+    {
+        this->_sourceSizeInBytes = get_file_size(this->source);
+    }
+    return this->_sourceSizeInBytes;
+}
+
+size_t FileCopy::get_dest_size()
+{
+    /* Get destination file size only if transfer has completed */
+    if (!complete()) return 0;
+    if (!this->_destSizeInBytes)
+    {
+        this->_destSizeInBytes = get_file_size(this->dest);
+    }
+    return this->_destSizeInBytes;
 }
 
 void FileCopy::close()
@@ -76,6 +97,8 @@ size_t FileCopy::read_to_buffer()
     /* Copies data from the source to the ring buffer */
     size_t numBytesRead;
     
+
+
     if (!this->_inStream.is_open()) return 0;
 
     char* bufferWriteByte = reinterpret_cast<char*>(this->_buff.get_write_byte());
@@ -102,6 +125,7 @@ size_t FileCopy::write_from_buffer()
     /* Writes from the buffer out to the destination */
     size_t beforePosition, afterPosition(0), numBytesWritten(0);
     
+    if (!this->started) this->started = true;
     if (!this->_outStream.is_open()) return 0;
 
     beforePosition = this->_outStream.tellp();
