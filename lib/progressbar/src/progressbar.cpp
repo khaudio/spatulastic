@@ -131,22 +131,36 @@ BasicProgressBar<T>::~BasicProgressBar()
 }
 
 template <typename T>
-void BasicProgressBar<T>::print(char* message, int width)
+void BasicProgressBar<T>::get_bar(char* output, int width)
 {
     int elapsed = std::round(RelativeProgress<T>::get() * static_cast<T>(width - 1));
     int remaining = (width - 1) - elapsed;
     int index(0);
     while (index < elapsed)
     {
-        message[index++] = this->elapsedChar;
+        output[index++] = this->elapsedChar;
     }
     while (index < remaining)
     {
-        message[index++] = this->pendingChar;
+        output[index++] = this->pendingChar;
     }
-    message[width] = '\0';
+    output[width] = '\0';
 }
 
+template <typename T>
+void BasicProgressBar<T>::print_bar(int width, bool appendReturn)
+{
+    char output[width];
+    get_bar(output, width);
+    for (int i(0); i < width; ++i)
+    {
+        std::cout << output[i];
+    }
+    if (appendReturn)
+    {
+        std::cout << "\r";
+    }
+}
 
 template class RelativeProgress<float>;
 template class RelativeProgress<double>;

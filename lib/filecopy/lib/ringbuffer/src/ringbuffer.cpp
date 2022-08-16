@@ -144,7 +144,7 @@ int RingBuffer<T>::available()
 }
 
 template <typename T>
-int RingBuffer<T>::buffers_full()
+int RingBuffer<T>::buffers_buffered()
 {
     /* Total number of unread readable buffers */
     return (this->_buffered / this->bufferLength);

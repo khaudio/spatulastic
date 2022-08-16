@@ -62,7 +62,7 @@ public:
     virtual int buffered();
     virtual int processed();
     virtual int available();
-    virtual int buffers_full();
+    virtual int buffers_buffered();
     virtual int buffers_processed();
     virtual bool is_writable();
 

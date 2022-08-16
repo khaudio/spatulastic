@@ -1,5 +1,10 @@
+#ifndef PROGRESSBAR_H
+#define PROGRESSBAR_H
+
 #include <cstddef>
 #include <cmath>
+#include <iostream>
+#include <iomanip>
 
 
 template <typename T = double>
@@ -59,6 +64,8 @@ public:
     BasicProgressBar();
     ~BasicProgressBar();
     
-    void print(char* message, int width = 80);
+    void get_bar(char* message, int width = 80);
+    void print_bar(int width = 80, bool appendReturn = true);
 };
 
+#endif

@@ -14,8 +14,9 @@ configure_file(include/cmakeconfig.h.in include/cmakeconfig.h)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/filecopy)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/progressbar)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/hashlib2plus/trunk)
 
-list(APPEND EXTRA_LIBS filecopy progressbar)
+list(APPEND EXTRA_LIBS filecopy progressbar hashlib2plus)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 

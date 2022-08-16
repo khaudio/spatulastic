@@ -1,3 +1,6 @@
+#ifndef FILECOPY_H
+#define FILECOPY_H
+
 #include <fstream>
 #include <filesystem>
 
@@ -19,6 +22,7 @@ enum file_mover_err
 class FileCopy
 {
 protected:
+public:
     bool _firstWritten;
 
     size_t
@@ -60,3 +64,5 @@ public:
     size_t write_from_buffer();
     size_t execute();
 };
+
+#endif
