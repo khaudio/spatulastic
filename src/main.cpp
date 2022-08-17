@@ -152,6 +152,13 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
 int main(int argc, char** argv)
 {
+    using namespace std::chrono_literals;
+
+    std::chrono::high_resolution_clock::time_point start, end;
+    std::chrono::high_resolution_clock::duration duration;
+ 
+    start = std::chrono::high_resolution_clock::now();
+
     /* It's, umm... it's main() */
     FileCopy fc;
 
@@ -162,7 +169,7 @@ int main(int argc, char** argv)
     std::cout << "Starting spatulastic..." << std::endl;
     std::cout << "Opening files... ";
 
-    fc.open_source("../demodata.txt");
+    fc.open_source("../demo_random_data");
     fc.open_dest();
 
     std::cout << "Done" << std::endl;
@@ -172,6 +179,20 @@ int main(int argc, char** argv)
 
     std::cout << "Transfer complete" << std::endl;
     std::cout << "Spatulastic out!" << std::endl;
+
+    end = std::chrono::high_resolution_clock::now();
+
+    duration = end - start;
+
+    std::cout << "Transfer took ";
+    std::cout << static_cast<double>(duration.count()) / 1000000;
+    std::cout << " ms" << std::endl;
+
+    std::ofstream log;
+    log.open("log.txt", std::ios::app);
+    log << "Source hashed " << (inlineHash ? "inline" : "after") << "\t";
+    log << static_cast<double>(duration.count()) / 1000000 << " ms" << std::endl;
+    log.close();
 
     return 0;
 }

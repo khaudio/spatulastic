@@ -8,10 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug Release)
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} \
-    -O0 -Wall \
-    -D_DEBUG \
-    -DRING_BUFFER_CHUNKSIZE=1024*1024 \
-    -lpthread"
+    -O0 \
+    -DRING_BUFFER_CHUNKSIZE=1024*1024*4 \
+    -lpthread \
+    -Wall \
+    -D_DEBUG"
 )
 
 configure_file(include/cmakeconfig.h.in include/cmakeconfig.h)

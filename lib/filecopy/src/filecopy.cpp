@@ -7,7 +7,7 @@ _sourceSizeInBytes(0),
 _destSizeInBytes(0),
 _numBytesReadToBuffer(0),
 _numBytesWrittenFromBuffer(0),
-_buff(RING_BUFFER_CHUNKSIZE, 4),
+_buff(RING_BUFFER_CHUNKSIZE, 16),
 started(false)
 {
 }
