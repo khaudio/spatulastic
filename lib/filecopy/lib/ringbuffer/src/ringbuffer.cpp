@@ -29,6 +29,7 @@ _samplesWritten(0),
 _samplesRemaining(bufferSize),
 _samplesProcessed(0),
 bufferLength(bufferSize),
+bytesPerSample(sizeof(T)),
 bytesPerBuffer(bufferSize * sizeof(T)),
 readIndex(0),
 writeIndex(1),
@@ -129,13 +130,6 @@ int RingBuffer<T>::buffered()
 }
 
 template <typename T>
-int RingBuffer<T>::processed()
-{
-    /* Total number of samples processed */
-    return this->_samplesProcessed;
-}
-
-template <typename T>
 int RingBuffer<T>::available()
 {
     /* Total number of samples unbuffered,
@@ -144,10 +138,24 @@ int RingBuffer<T>::available()
 }
 
 template <typename T>
+int RingBuffer<T>::processed()
+{
+    /* Total number of samples processed */
+    return this->_samplesProcessed;
+}
+
+template <typename T>
 int RingBuffer<T>::buffers_buffered()
 {
     /* Total number of unread readable buffers */
     return (this->_buffered / this->bufferLength);
+}
+
+template <typename T>
+int RingBuffer<T>::buffers_available()
+{
+    /* Total number of writable buffers */
+    return (available() / this->bufferLength);
 }
 
 template <typename T>
@@ -243,8 +251,13 @@ void RingBuffer<T>::rotate_processing_buffer()
 template <typename T>
 void RingBuffer<T>::rotate_partial_read(unsigned int length, bool force)
 {
+    /* Rotates read buffer after reading only a specified
+    number of samples instead of the entire buffer */
     #if _DEBUG
-    if (length > this->bufferLength) throw std::out_of_range("Length must be <= buffer length");
+    if (length > this->bufferLength)
+    {
+        throw std::out_of_range("Length must be <= buffer length");
+    }
     #endif
 
     rotate_read_index();
@@ -264,8 +277,13 @@ void RingBuffer<T>::rotate_partial_read(unsigned int length, bool force)
 template <typename T>
 void RingBuffer<T>::rotate_partial_write(unsigned int length, bool force)
 {
+    /* Rotates write buffer after writing only a specified
+    number of samples instead of the entire buffer */
     #if _DEBUG
-    if (length > this->bufferLength) throw std::out_of_range("Length must be <= buffer length");
+    if (length > this->bufferLength)
+    {
+        throw std::out_of_range("Length must be <= buffer length");
+    }
     #endif
 
     rotate_write_index();
@@ -274,7 +292,7 @@ void RingBuffer<T>::rotate_partial_write(unsigned int length, bool force)
     this->_buffered += length;
     this->_buffered = (
             (this->_buffered > this->_totalWritableLength)
-            ? this->bufferLength : this->_buffered
+            ? this->_totalWritableLength : this->_buffered
         );
     _set_buffer_processed(this->writeIndex, false);
     if (force && !is_writable())
@@ -282,6 +300,28 @@ void RingBuffer<T>::rotate_partial_write(unsigned int length, bool force)
         rotate_read_buffer();
     }
 }
+
+template <typename T>
+void RingBuffer<T>::rotate_partial_processing(unsigned int length)
+{
+    /* Rotates processing buffer after processing only
+    a specified number of samples instead of the entire buffer */
+    #if _DEBUG
+    if (length > this->bufferLength)
+    {
+        throw std::out_of_range("Length must be <= buffer length");
+    }
+    #endif
+
+    _set_buffer_processed(this->processingIndex, true);
+    this->_samplesProcessed += length;
+    this->_samplesProcessed = (
+        (this->_samplesProcessed > this->_totalWritableLength)
+        ? this->_totalWritableLength : this->_samplesProcessed
+    );
+    rotate_processing_index();
+}
+
 
 template <typename T>
 inline uint8_t RingBuffer<T>::get_ring_index(std::vector<T>* bufferPtr)

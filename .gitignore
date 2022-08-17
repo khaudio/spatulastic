@@ -1,6 +1,6 @@
 *.DS_Store
 *.vscode
 *sftp.json
-build/
+*build/
 demo_write_out.txt
 demo_random_data

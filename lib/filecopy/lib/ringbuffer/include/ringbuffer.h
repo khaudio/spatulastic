@@ -45,7 +45,11 @@ protected:
     bool _size_is_set();
 
 public:
-    uint32_t bufferLength, totalRingSampleLength, bytesPerBuffer;
+    uint32_t
+        bufferLength,
+        totalRingSampleLength,
+        bytesPerSample,
+        bytesPerBuffer;
     uint8_t readIndex, writeIndex, processingIndex;
     std::vector<std::vector<T>> ring;
     std::map<uint8_t, bool> bufferProcessedState;
@@ -60,9 +64,10 @@ public:
     virtual void zero_fill();
 
     virtual int buffered();
-    virtual int processed();
     virtual int available();
+    virtual int processed();
     virtual int buffers_buffered();
+    virtual int buffers_available();
     virtual int buffers_processed();
     virtual bool is_writable();
 
@@ -76,6 +81,7 @@ public:
 
     virtual void rotate_partial_read(unsigned int length, bool force = false);
     virtual void rotate_partial_write(unsigned int length, bool force = false);
+    virtual void rotate_partial_processing(unsigned int length);
 
     virtual uint8_t get_ring_index(std::vector<T>* bufferPtr);
     virtual uint8_t get_ring_index(uint8_t* bufferPtr);
