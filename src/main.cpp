@@ -58,7 +58,8 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
     md5wrapper destHashWrapper;
 
     std::string sourceHash, destHash;
-    char status[40];
+    char status[41];
+    size_t progressBarWidth = sizeof(status) - 1;
 
     /* Get the file size for the progress bar */
     bar.set_maximum(fc->get_source_size());
@@ -97,8 +98,7 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
         /* Get a progress bar and print it */
         bar.increment(bytesMoved);
-        bar.get_bar(status, sizeof(status));
-        static size_t progressBarWidth = sizeof(status) - 1;
+        bar.get_bar(status, progressBarWidth);
         for (size_t i(0); i < progressBarWidth; ++i)
         {
             std::cout << status[i];
@@ -133,14 +133,14 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
     {
         /* Generate the source file checksum all at once
         from the file instead of the buffer */
-        sourceHash = sourceHashWrapper.getHashFromFile(fc->source.c_str());
+        sourceHash = sourceHashWrapper.getHashFromFile(fc->source.string());
     }
     
     std::cout << "Done." << std::endl;
     std::cout << "Generating destination checksum... ";
 
     /* Get destination file checksum now that the transfer is complete */
-    destHash = destHashWrapper.getHashFromFile(fc->dest.c_str());
+    destHash = destHashWrapper.getHashFromFile(fc->dest.string());
 
     std::cout << "Done." << std::endl;
     std::cout << std::setw(32) << "Source checksum:\t" << sourceHash << std::endl;
