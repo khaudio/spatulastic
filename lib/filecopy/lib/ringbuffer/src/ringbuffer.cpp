@@ -603,7 +603,6 @@ template class Buffer::RingBuffer<int32_t>;
 template class Buffer::RingBuffer<uint32_t>;
 template class Buffer::RingBuffer<int64_t>;
 template class Buffer::RingBuffer<uint64_t>;
-template class Buffer::RingBuffer<int_audio>;
 template class Buffer::RingBuffer<float>;
 template class Buffer::RingBuffer<double>;
 template class Buffer::RingBuffer<long double>;

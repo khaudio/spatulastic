@@ -11,7 +11,9 @@
 #include <map>
 #include <stdexcept>
 
-#include "audioutils.h"
+
+namespace Buffer
+{
 
 enum ringbuffer_err
 {
@@ -19,8 +21,17 @@ enum ringbuffer_err
     BUFFER_NOT_INITIALIZED = 150,
 };
 
-namespace Buffer
+template <typename T>
+constexpr T get_zero()
 {
+    const uint64_t exponent = (sizeof(T) * 8) - 1;
+    uint64_t value = 2;
+    for (int i(0); i < exponent; ++i) value *= 2;
+    return (
+            std::numeric_limits<T>::is_integer
+            && std::is_unsigned<T>()
+        ) ? (value - 1) : 0;
+}
 
 class Ring
 {

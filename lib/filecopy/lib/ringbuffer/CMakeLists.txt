@@ -5,10 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(ringbuffer src/ringbuffer.cpp)
 
-add_subdirectory(lib/audioutils)
-
-list(APPEND EXTRA_LIBS audioutils)
-
 target_include_directories(ringbuffer
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -20,11 +16,3 @@ target_include_directories(ringbuffer
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
 )
-
-target_link_libraries(ringbuffer
-    PRIVATE
-        ${EXTRA_LIBS}
-    PUBLIC
-        ${EXTRA_LIBS}
-)
-

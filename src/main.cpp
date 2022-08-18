@@ -3,6 +3,10 @@
 #include "ringbuffer.h"
 #include "hashlibpp.h"
 
+/* Whether to hash the source file
+while it's being moved in the ring buffer */
+#define INLINEHASH                      1
+
 
 enum spatulastic_err
 {
@@ -93,8 +97,8 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
         /* Get a progress bar and print it */
         bar.increment(bytesMoved);
         bar.get_bar(status, sizeof(status));
-
-        for (size_t i(0); i < sizeof(status); ++i)
+        static size_t progressBarWidth = sizeof(status) - 1;
+        for (size_t i(0); i < progressBarWidth; ++i)
         {
             std::cout << status[i];
         }
@@ -162,10 +166,6 @@ int main(int argc, char** argv)
     /* It's, umm... it's main() */
     FileCopy fc;
 
-    /* Whether to hash the source file
-    while it's being moved in the ring buffer */
-    bool inlineHash = true;
-    
     std::cout << "Starting spatulastic..." << std::endl;
     std::cout << "Opening files... ";
 
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
     std::cout << "Done" << std::endl;
     std::cout << "Starting transfer..." << std::endl;
 
-    execute_transfer(&fc, inlineHash);
+    execute_transfer(&fc, INLINEHASH);
 
     std::cout << "Transfer complete" << std::endl;
     std::cout << "Spatulastic out!" << std::endl;
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
     std::ofstream log;
     log.open("log.txt", std::ios::app);
-    log << "Source hashed " << (inlineHash ? "inline" : "after") << "\t";
+    log << "Source hashed " << (INLINEHASH ? "inline" : "after") << "\t";
     log << static_cast<double>(duration.count()) / 1000000 << " ms" << std::endl;
     log.close();
 

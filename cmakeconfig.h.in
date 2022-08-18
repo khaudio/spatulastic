@@ -1,4 +1,0 @@
-/* The configured options and settings for spatulastic */
-
-#define spatulastic_VERSION_MAJOR       @spatulastic_VERSION_MAJOR@
-#define spatulastic_VERSION_MINOR       @spatulastic_VERSION_MINOR@

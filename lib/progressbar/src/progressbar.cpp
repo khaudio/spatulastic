@@ -153,8 +153,8 @@ void BasicProgressBar<T>::get_bar(char* output, int width)
 template <typename T>
 void BasicProgressBar<T>::print_bar(int width, bool appendReturn)
 {
-    char output[width];
-    get_bar(output, width);
+    char output[width + 1];
+    get_bar(output, width + 1);
     for (int i(0); i < width; ++i)
     {
         std::cout << output[i];
