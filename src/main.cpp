@@ -1,3 +1,4 @@
+#include <sstream>
 #include "filecopy.h"
 #include "progressbar.h"
 #include "ringbuffer.h"
