@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug Release)
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} \
-    -Ofast \
+    -O0 \
     -DRING_BUFFER_CHUNKSIZE=1024*1024*4 \
     -lpthread \
     -Wall \
