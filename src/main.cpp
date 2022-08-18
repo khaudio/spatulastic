@@ -6,7 +6,7 @@
 
 /* Whether to hash the source file
 while it's being moved in the ring buffer */
-#define INLINEHASH                      1
+#define INLINEHASH                      true
 
 
 enum spatulastic_err
@@ -117,12 +117,10 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
     {
         throw FILESIZE_MISMATCH;
     }
-    #ifdef _DEBUG
     if (fc->_numBytesReadToBuffer != fc->_numBytesWrittenFromBuffer)
     {
         throw READ_WRITE_MISMATCH;
     }
-    #endif
 
     std::cout << "Generating source checksum... ";
 
@@ -157,15 +155,11 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
 int main(int argc, char** argv)
 {
-    using namespace std::chrono_literals;
+    FileCopy fc;
 
     std::chrono::high_resolution_clock::time_point start, end;
     std::chrono::high_resolution_clock::duration duration;
- 
     start = std::chrono::high_resolution_clock::now();
-
-    /* It's, umm... it's main() */
-    FileCopy fc;
 
     std::cout << "Starting spatulastic..." << std::endl;
     std::cout << "Opening files... ";
@@ -180,15 +174,11 @@ int main(int argc, char** argv)
 
     std::cout << "Transfer complete" << std::endl;
     std::cout << "Spatulastic out!" << std::endl;
-
     end = std::chrono::high_resolution_clock::now();
-
     duration = end - start;
-
     std::cout << "Transfer took ";
     std::cout << static_cast<double>(duration.count()) / 1000000;
     std::cout << " ms" << std::endl;
-
     std::ofstream log;
     log.open("log.txt", std::ios::app);
     log << "Source hashed " << (INLINEHASH ? "inline" : "after") << "\t";
