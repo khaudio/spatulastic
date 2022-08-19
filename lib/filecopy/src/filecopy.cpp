@@ -71,6 +71,29 @@ void FileCopy::open_dest()
     this->_outStream.open(this->dest, std::ios::binary);
 }
 
+void FileCopy::create_dest_directory()
+{
+    #if _DEBUG
+    if (this->dest.empty())
+    {
+        throw DEST_NOT_SET;
+    }
+    #endif
+
+    if (std::filesystem::is_directory(this->dest))
+    {
+        std::filesystem::create_directory(this->dest);
+    }
+}
+
+void FileCopy::create_directories(std::vector<std::filesystem::path> paths)
+{
+    for (const std::filesystem::path& p: paths)
+    {
+        std::filesystem::create_directories(p);
+    }
+}
+
 size_t FileCopy::get_source_size()
 {
     /* Get source file size */

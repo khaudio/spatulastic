@@ -1,5 +1,6 @@
 #include <sstream>
 #include "filecopy.h"
+#include "gatherdir.h"
 #include "progressbar.h"
 #include "ringbuffer.h"
 #include "hashlibpp.h"
@@ -155,20 +156,21 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
 int main(int argc, char** argv)
 {
+    std::cout << "Starting spatulastic..." << std::endl;
+    #if _DEBUG
+    std::cout << "Debug mode enabled" << std::endl;
+    #endif
+
+    GatherDir gatherer;
     FileCopy fc;
 
     std::chrono::high_resolution_clock::time_point start, end;
     std::chrono::high_resolution_clock::duration duration;
     start = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Starting spatulastic..." << std::endl;
-    #if _DEBUG
-    std::cout << "Debug mode enabled" << std::endl;
-    #endif
-
     std::cout << "Opening files... ";
 
-    fc.open_source("../demodata.txt");
+    fc.open_source("../example_data/subfolder1/demodata.txt");
     fc.open_dest();
 
     std::cout << "Done" << std::endl;

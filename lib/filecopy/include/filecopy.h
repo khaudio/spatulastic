@@ -54,6 +54,8 @@ public:
     void open_source(const char* filepath);
     void open_dest(const char* filepath);
     void open_dest();
+    void create_dest_directory();
+    static void create_directories(std::vector<std::filesystem::path> paths);
     
     size_t get_source_size();
     size_t get_dest_size();
