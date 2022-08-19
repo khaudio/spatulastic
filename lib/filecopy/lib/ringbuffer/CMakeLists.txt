@@ -13,6 +13,5 @@ target_include_directories(ringbuffer
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

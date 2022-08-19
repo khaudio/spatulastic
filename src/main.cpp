@@ -162,9 +162,13 @@ int main(int argc, char** argv)
     start = std::chrono::high_resolution_clock::now();
 
     std::cout << "Starting spatulastic..." << std::endl;
+    #if _DEBUG
+    std::cout << "Debug mode enabled" << std::endl;
+    #endif
+
     std::cout << "Opening files... ";
 
-    fc.open_source("../demo_random_data");
+    fc.open_source("../demodata.txt");
     fc.open_dest();
 
     std::cout << "Done" << std::endl;
@@ -181,7 +185,7 @@ int main(int argc, char** argv)
     std::cout << " ms" << std::endl;
     std::ofstream log;
     log.open("log.txt", std::ios::app);
-    log << "Source hashed " << (INLINEHASH ? "inline" : "after") << "\t";
+    log << "Source hashed " << (INLINEHASH ? "inline" : "after ") << "\t";
     log << static_cast<double>(duration.count()) / 1000000 << " ms" << std::endl;
     log.close();
 

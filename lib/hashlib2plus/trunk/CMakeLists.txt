@@ -27,11 +27,3 @@ target_include_directories(hashlib2plus
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>
 )
-
-target_link_libraries(hashlib2plus
-    PRIVATE
-        ${EXTRA_LIBS}
-    PUBLIC
-        ${EXTRA_LIBS}
-)
-

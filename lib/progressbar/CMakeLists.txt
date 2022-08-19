@@ -2,17 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 add_library(progressbar src/progressbar.cpp)
 
-# C++ Standard
 set(CMAKE_CXX_STANDARAD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-target_compile_options(progressbar
-    PRIVATE
-        -std=c++17
-    PUBLIC
-        "$<$<CONFIG:Debug>:/DO0;/DWall;/DWerror;/D_DEBUG>"
-        "$<$<CONFIG:Release>:>"
-)
 
 target_include_directories(progressbar
     INTERFACE
@@ -22,14 +13,5 @@ target_include_directories(progressbar
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-target_link_libraries(progressbar
-    PRIVATE
-        ${EXTRA_LIBS}
-    PUBLIC
-        ${EXTRA_LIBS}
-)
-

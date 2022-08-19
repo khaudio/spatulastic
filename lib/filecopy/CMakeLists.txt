@@ -7,7 +7,7 @@ add_library(filecopy src/filecopy.cpp)
 
 add_subdirectory(lib/ringbuffer)
 
-list(APPEND EXTRA_LIBS ringbuffer)
+list(APPEND LIBRARIES ringbuffer)
 
 target_include_directories(filecopy
     INTERFACE
@@ -17,14 +17,16 @@ target_include_directories(filecopy
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(filecopy
     PRIVATE
-        ${EXTRA_LIBS}
+        ${LIBRARIES}
+    
     PUBLIC
-        ${EXTRA_LIBS}
+        ${LIBRARIES}
+    
+    INTERFACE
+        ${LIBRARIES}
 )
-
