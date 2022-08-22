@@ -14,8 +14,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/filecopy)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/gatherdir)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/progressbar)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/hashlib2plus)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/templateinstantiator)
 
-list(APPEND LIBRARIES filecopy gatherdir progressbar hashlib2plus)
+list(APPEND LIBRARIES filecopy gatherdir progressbar hashlib2plus templateinstantiator)
 
 add_executable(${PROJECT_NAME}
     src/treeslinger.cpp

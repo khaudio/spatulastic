@@ -200,21 +200,21 @@ void TreeSlinger::_create_csv()
     // #endif
 
     std::ofstream report;
-    std::wstringstream filenameStream;
+    std::stringstream filename;
+    std::wstring wseparator(&(std::filesystem::path::preferred_separator));
+    std::string separator(wseparator.begin(), wseparator.end());
     size_t numFiles(this->_gatherer.num_files());
 
-    filenameStream << this->destination.wstring();
-    filenameStream << std::filesystem::path::preferred_separator;
-    filenameStream << "today_now_"; // Insert date and time
-    std::wstring wstr(filenameStream.str());
-    std::string filename(wstr.begin(), wstr.end());
+    filename << this->destination.string();
+    filename << separator;
+    filename << "today_now_"; // Insert date and time
 
     #if _DEBUG
-    std::cout << "Creating csv " << filename;
+    std::cout << "Creating csv " << filename.str();
     std::cout << std::endl;
     #endif
 
-    report.open(filename, std::ofstream::out);
+    report.open(filename.str(), std::ofstream::out);
     report << "Filename," << this->algorithm << " Checksum" << std::endl;
 
     for (int i(0); i < numFiles; ++i)
