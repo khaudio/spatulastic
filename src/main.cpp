@@ -1,19 +1,15 @@
-#include <sstream>
-#include "filecopy.h"
-#include "gatherdir.h"
-#include "progressbar.h"
-#include "ringbuffer.h"
-#include "hashlibpp.h"
+// #include "cmakeconfig.h"
+#include "treeslinger.h"
 
 /* Whether to hash the source file
 while it's being moved in the ring buffer */
 #define INLINEHASH                      true
 
 
-enum spatulastic_err
-{
-    CHECKSUM_MISMATCH = 1001,
-};
+void hash_data(FileCopy* fc, MD5* hasher);
+std::string get_checksum_from_hasher(MD5* hasher, HL_MD5_CTX* hasherCtx);
+void execute_transfer(FileCopy* fc);
+int main(int argc, char** argv);
 
 
 void hash_data(FileCopy* fc, MD5* hasher, HL_MD5_CTX* hasherCtx)
@@ -156,7 +152,7 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
 int main(int argc, char** argv)
 {
-    std::cout << "Starting spatulastic..." << std::endl;
+    /* std::cout << "Starting spatulastic..." << std::endl;
     #if _DEBUG
     std::cout << "Debug mode enabled" << std::endl;
     #endif
@@ -189,7 +185,35 @@ int main(int argc, char** argv)
     log.open("log.txt", std::ios::app);
     log << "Source hashed " << (INLINEHASH ? "inline" : "after ") << "\t";
     log << static_cast<double>(duration.count()) / 1000000 << " ms" << std::endl;
-    log.close();
+    log.close(); */
+    
+    std::cout << "running..." << std::endl;
+
+    std::filesystem::path src("../example_data");
+    std::filesystem::path dest("../build");
+    
+    TreeSlinger t;
+    std::cout << "running t.set_source(src);" << std::endl;
+    t.set_source(src);
+    std::cout << "running t.set_destination(dest);" << std::endl;
+    t.set_destination(dest);
+    std::cout << "running t.set_hash_algorithm('md5');" << std::endl;
+    t.set_hash_algorithm("md5");
+
+    std::cout << "running t._create_copiers(1);" << std::endl;
+    t._create_copiers(1);
+    std::cout << "running t._create_dest_dir_structure();" << std::endl;
+    t._create_dest_dir_structure();
+    std::cout << "running t._enumerate_dest_files();" << std::endl;
+    t._enumerate_dest_files();
+    std::cout << "running t._allocate_checksums();" << std::endl;
+    t._allocate_checksums();
+    std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
+    t.set_hash_inline(INLINEHASH);
+    std::cout << "running t._create_csv();" << std::endl;
+    t._create_csv();
+    
+    std::cout << "done." << std::endl;
 
     return 0;
 }

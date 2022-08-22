@@ -13,11 +13,14 @@ configure_file(include/cmakeconfig.h.in include/cmakeconfig.h)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/filecopy)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/gatherdir)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/progressbar)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/hashlib2plus/trunk)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/hashlib2plus)
 
 list(APPEND LIBRARIES filecopy gatherdir progressbar hashlib2plus)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME}
+    src/treeslinger.cpp
+    src/main.cpp
+)
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE

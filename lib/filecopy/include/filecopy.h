@@ -45,27 +45,24 @@ public:
     bool started;
 
     FileCopy();
+    FileCopy(const FileCopy& obj);
     ~FileCopy();
     
     static size_t get_file_size(const char* filepath);
     static size_t get_file_size(std::filesystem::path filepath);
     
-    void set_dest_dir(const char* directory);
     void open_source(const char* filepath);
     void open_dest(const char* filepath);
     void open_dest();
-    void create_dest_directory();
-    static void create_directories(std::vector<std::filesystem::path> paths);
     
     size_t get_source_size();
     size_t get_dest_size();
+    size_t bytes_remaining();
     
     void close();
-    
     bool ready();
     bool complete();
-
-    size_t bytes_remaining();
+    void reset();
 
     size_t read_to_buffer();
     size_t write_from_buffer();

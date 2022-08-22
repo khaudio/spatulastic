@@ -93,6 +93,7 @@ void RingBuffer<T>::set_size(int bufferSize, uint8_t ringSize)
     }
     this->readIndex = 0;
     this->writeIndex = 1;
+    this->processingIndex = 0;
 }
 
 template <typename T>
@@ -118,6 +119,22 @@ void RingBuffer<T>::zero_fill()
                 this->ring[0].end(),
                 this->ring[i].begin()
             );
+    }
+}
+
+template <typename T>
+void RingBuffer<T>::reset(bool zeroFill)
+{
+    if (zeroFill) zero_fill();
+    this->_samplesRemaining = this->bufferLength;
+    this->_samplesWritten = 0;
+    this->_buffered = 0;
+    this->readIndex = 0;
+    this->writeIndex = 1;
+    this->processingIndex = 0;
+    for (int i(0); i < this->ringLength; ++i)
+    {
+        this->bufferProcessedState[i] = false;
     }
 }
 

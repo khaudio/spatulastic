@@ -8,21 +8,26 @@
 class GatherDir
 {
 protected:
-    std::filesystem::path entry;
-    std::vector<std::filesystem::path> *directories, *paths;
+    std::filesystem::path _entry;
+    std::vector<std::filesystem::path> *_directories, *_paths;
 
 public:
     GatherDir();
     ~GatherDir();
 
-    void set(std::filesystem::path target);
-    void set(const char* target);
-    void set(std::string target);
-    std::filesystem::path get_entry();
-    std::vector<std::filesystem::path>* get_directories();
-    std::vector<std::filesystem::path>* get();
-    void print();
-    void print_directories();
+    virtual void set(std::filesystem::path target);
+    virtual void set(const char* target);
+    virtual void set(std::string target);
+    
+    virtual std::filesystem::path get_entry();
+    virtual std::vector<std::filesystem::path>* get_directories();
+    virtual std::vector<std::filesystem::path>* get();
+    
+    size_t num_directories();
+    size_t num_files();
+    
+    virtual void print();
+    virtual void print_directories();
 };
 
 #endif

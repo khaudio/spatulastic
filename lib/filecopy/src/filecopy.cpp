@@ -7,8 +7,19 @@ _sourceSizeInBytes(0),
 _destSizeInBytes(0),
 _numBytesReadToBuffer(0),
 _numBytesWrittenFromBuffer(0),
-_buff(RING_BUFFER_CHUNKSIZE, 16),
+_buff(RING_BUFFER_CHUNKSIZE, 4),
 started(false)
+{
+}
+
+FileCopy::FileCopy(const FileCopy& obj) :
+_firstWritten(obj._firstWritten),
+_sourceSizeInBytes(obj._sourceSizeInBytes),
+_destSizeInBytes(obj._destSizeInBytes),
+_numBytesReadToBuffer(obj._numBytesReadToBuffer),
+_numBytesWrittenFromBuffer(obj._numBytesWrittenFromBuffer),
+_buff(obj._buff.bufferLength, obj._buff.ringLength),
+started(obj.started)
 {
 }
 
@@ -33,11 +44,6 @@ size_t FileCopy::get_file_size(std::filesystem::path filepath)
 {
     /* Gets file size of specified filepath */
     return std::filesystem::file_size(filepath);
-}
-
-void FileCopy::set_dest_dir(const char* directory)
-{
-    this->dest = directory;
 }
 
 void FileCopy::open_source(const char* filepath)
@@ -71,29 +77,6 @@ void FileCopy::open_dest()
     this->_outStream.open(this->dest, std::ios::binary);
 }
 
-void FileCopy::create_dest_directory()
-{
-    #if _DEBUG
-    if (this->dest.empty())
-    {
-        throw DEST_NOT_SET;
-    }
-    #endif
-
-    if (std::filesystem::is_directory(this->dest))
-    {
-        std::filesystem::create_directory(this->dest);
-    }
-}
-
-void FileCopy::create_directories(std::vector<std::filesystem::path> paths)
-{
-    for (const std::filesystem::path& p: paths)
-    {
-        std::filesystem::create_directories(p);
-    }
-}
-
 size_t FileCopy::get_source_size()
 {
     /* Get source file size */
@@ -115,15 +98,15 @@ size_t FileCopy::get_dest_size()
     return this->_destSizeInBytes;
 }
 
+size_t FileCopy::bytes_remaining()
+{
+    return this->_numBytesReadToBuffer - this->_numBytesWrittenFromBuffer;
+}
+
 void FileCopy::close()
 {
     this->_inStream.close();
     this->_outStream.close();
-}
-
-size_t FileCopy::bytes_remaining()
-{
-    return this->_numBytesReadToBuffer - this->_numBytesWrittenFromBuffer;
 }
 
 bool FileCopy::complete()
@@ -134,6 +117,18 @@ bool FileCopy::complete()
             && !bytes_remaining()
             && !this->_buff.buffered()
         );
+}
+
+void FileCopy::reset()
+{
+    close();
+    this->started = false;
+    this->_firstWritten = false;
+    this->_sourceSizeInBytes = 0;
+    this->_destSizeInBytes = 0;
+    this->_numBytesReadToBuffer = 0;
+    this->_numBytesWrittenFromBuffer = 0;
+    this->_buff.reset();
 }
 
 size_t FileCopy::read_to_buffer()

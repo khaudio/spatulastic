@@ -73,6 +73,7 @@ public:
     virtual size_t size();
 
     virtual void zero_fill();
+    virtual void reset(bool zeroFill = false);
 
     virtual int buffered();
     virtual int available();
