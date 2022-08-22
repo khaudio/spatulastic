@@ -53,6 +53,23 @@ std::filesystem::path TreeSlinger::relative_dest(
         ));
 }
 
+inline std::filesystem::path TreeSlinger::_strip_parent_path(
+        std::filesystem::path asset
+    )
+{
+    #if _DEBUG
+    if (!this->_parentPathLength)
+    {
+        throw PARENT_PATH_NOT_SET;
+    }
+    #endif
+
+    return std::filesystem::path(asset.string().substr(
+            this->_parentPathLength,
+            asset.string().size()
+        ));
+}
+
 inline std::filesystem::path TreeSlinger::_get_relative_dest(
         std::filesystem::path sourceAsset
     )
@@ -183,21 +200,21 @@ void TreeSlinger::_create_csv()
     // #endif
 
     std::ofstream report;
-    std::wstringstream filename;
+    std::wstringstream filenameStream;
     size_t numFiles(this->_gatherer.num_files());
 
-    filename << this->destination.wstring();
-    filename << std::filesystem::path::preferred_separator;
-    filename << "today_now_"; // Insert date and time
+    filenameStream << this->destination.wstring();
+    filenameStream << std::filesystem::path::preferred_separator;
+    filenameStream << "today_now_"; // Insert date and time
+    std::wstring wstr(filenameStream.str());
+    std::string filename(wstr.begin(), wstr.end());
 
     #if _DEBUG
-    std::cout << "Creating csv ";
-    std::wstring wstr(filename.str());
-    std::cout << std::string(wstr.begin(), wstr.end());
+    std::cout << "Creating csv " << filename;
     std::cout << std::endl;
     #endif
 
-    report.open(filename.str(), std::ofstream::out);
+    report.open(filename, std::ofstream::out);
     report << "Filename," << this->algorithm << " Checksum" << std::endl;
 
     for (int i(0); i < numFiles; ++i)
@@ -205,7 +222,9 @@ void TreeSlinger::_create_csv()
         report << this->_destFiles->at(i);
         report << ",";
         // report << this->_destChecksums->at(i);
+        
         report << "placeholder_checksum";
+        
         report << std::endl;
     }
 }

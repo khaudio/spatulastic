@@ -31,6 +31,9 @@ public:
     std::vector<std::filesystem::path>* _destFiles;
     std::vector<char[16]> *_sourceChecksums, *_destChecksums;
     
+    virtual std::filesystem::path _strip_parent_path(
+            std::filesystem::path asset
+        );
     virtual std::filesystem::path _get_relative_dest(
             std::filesystem::path sourceAsset
         );
