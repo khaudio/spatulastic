@@ -3,6 +3,7 @@
 
 FileCopy::FileCopy() :
 _firstWritten(false),
+_overwrite(false),
 _sourceSizeInBytes(0),
 _destSizeInBytes(0),
 _numBytesReadToBuffer(0),
@@ -14,6 +15,7 @@ started(false)
 
 FileCopy::FileCopy(const FileCopy& obj) :
 _firstWritten(obj._firstWritten),
+_overwrite(obj._overwrite),
 _sourceSizeInBytes(obj._sourceSizeInBytes),
 _destSizeInBytes(obj._destSizeInBytes),
 _numBytesReadToBuffer(obj._numBytesReadToBuffer),
@@ -34,18 +36,6 @@ bool FileCopy::ready()
     return (this->_inStream.is_open() && this->_outStream.is_open());
 }
 
-size_t FileCopy::get_file_size(const char* filepath)
-{
-    /* Gets file size of specified filepath */
-    return std::filesystem::file_size(std::filesystem::path(filepath));
-}
-
-size_t FileCopy::get_file_size(std::filesystem::path filepath)
-{
-    /* Gets file size of specified filepath */
-    return std::filesystem::file_size(filepath);
-}
-
 void FileCopy::open_source(std::filesystem::path filepath)
 {
     /* Opens source file and gets file size */
@@ -54,14 +44,12 @@ void FileCopy::open_source(std::filesystem::path filepath)
     this->_inStream.open(this->source, std::ios::binary);
 }
 
-
 void FileCopy::open_source(const char* filepath)
 {
     /* Opens source file and gets file size */
-        this->source = filepath;
-        
-        get_source_size();
-        this->_inStream.open(this->source, std::ios::binary);
+    this->source = filepath;
+    get_source_size();
+    this->_inStream.open(this->source, std::ios::binary);
 }
 
 void FileCopy::open_dest(std::filesystem::path filepath)
@@ -90,6 +78,11 @@ void FileCopy::open_dest()
     #endif
 
     this->dest.replace_filename(this->source.filename());
+    if (!this->_overwrite && std::filesystem::exists(this->dest))
+    {
+        get_dest_size();
+        return;
+    }
     this->_outStream.open(this->dest, std::ios::binary);
 }
 
@@ -98,18 +91,21 @@ size_t FileCopy::get_source_size()
     /* Get source file size */
     if (!this->_sourceSizeInBytes)
     {
-        this->_sourceSizeInBytes = get_file_size(this->source);
+        this->_sourceSizeInBytes = std::filesystem::file_size(this->source);
     }
     return this->_sourceSizeInBytes;
 }
 
 size_t FileCopy::get_dest_size()
 {
-    /* Get destination file size only if transfer has completed */
+    /* Get destination file size */
+    #if _DEBUG
     if (!complete()) return 0;
+    #endif
+    
     if (!this->_destSizeInBytes)
     {
-        this->_destSizeInBytes = get_file_size(this->dest);
+        this->_destSizeInBytes = std::filesystem::file_size(this->dest);
     }
     return this->_destSizeInBytes;
 }
@@ -282,6 +278,11 @@ size_t FileCopy::execute()
     std::cout << "Assets not empty; proceeding..." << std::endl;
     #endif
 
+    if (this->_destSizeInBytes && !_overwrite)
+    {
+        goto copyComplete;
+    }
+
     /* Executes copy and blocks until transfer is complete */
     this->started = true;
 
@@ -304,24 +305,30 @@ size_t FileCopy::execute()
     #if _DEBUG
     std::cout << "Closing files..." << std::endl;
     #endif
+
     close();
 
     #if _DEBUG
     std::cout << "Checking dest file size" << std::endl;
     #endif
-    this->_destSizeInBytes = get_file_size(this->dest);
 
-    if (this->_sourceSizeInBytes != this->_destSizeInBytes)
-    {
-        throw FILESIZE_MISMATCH;
-    }
+    get_dest_size();
 
-    #ifdef _DEBUG
+    #if _DEBUG
     if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
     {
         throw READ_WRITE_MISMATCH;
     }
     #endif
 
-    return this->_numBytesWrittenFromBuffer;
+    copyComplete:
+
+    #ifdef _DEBUG
+    if (this->_sourceSizeInBytes != this->_destSizeInBytes)
+    {
+        throw FILESIZE_MISMATCH;
+    }
+    #endif
+
+    return this->_destSizeInBytes;
 }

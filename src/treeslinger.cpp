@@ -299,12 +299,6 @@ size_t TreeSlinger::_copy_file(
     copier->reset();
 
     #if _DEBUG
-    std::cout << "Copier is ";
-    std::cout << (copier->ready() ? "" : "not ");
-    std::cout << "ready" << std::endl;
-    #endif
-
-    #if _DEBUG
     std::cout << "Opening source: ";
     std::cout << srcAsset.string() << std::endl;
     #endif
@@ -317,6 +311,12 @@ size_t TreeSlinger::_copy_file(
     #endif
 
     copier->open_dest(destAsset);
+
+    #if _DEBUG
+    std::cout << "Copier is ";
+    std::cout << (copier->ready() ? "" : "not ");
+    std::cout << "ready" << std::endl;
+    #endif
 
     #if _DEBUG
     std::cout << "Executing..." << std::endl;

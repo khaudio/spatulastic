@@ -26,15 +26,15 @@ class FileCopy
 {
 protected:
 public:
-    bool _firstWritten;
+    bool
+        _firstWritten,
+        _overwrite;
 
     size_t
         _sourceSizeInBytes,
         _destSizeInBytes,
         _numBytesReadToBuffer,
         _numBytesWrittenFromBuffer;
-
-    std::filesystem::path source, dest;
 
     std::ifstream _inStream;
     std::ofstream _outStream;
@@ -43,13 +43,11 @@ public:
 
 public:
     bool started;
+    std::filesystem::path source, dest;
 
     FileCopy();
     FileCopy(const FileCopy& obj);
     ~FileCopy();
-    
-    static size_t get_file_size(const char* filepath);
-    static size_t get_file_size(std::filesystem::path filepath);
     
     void open_source(std::filesystem::path filepath);
     void open_source(const char* filepath);

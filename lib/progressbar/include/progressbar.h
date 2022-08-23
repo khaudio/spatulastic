@@ -35,6 +35,7 @@ template <typename T = double>
 class AbsoluteProgress : public RelativeProgress<T>
 {
 protected:
+public:
     size_t _maximum, _state, _absoluteChunkSize;
     
     bool _initialized();

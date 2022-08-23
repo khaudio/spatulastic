@@ -109,7 +109,7 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
     /* Close the files */
     fc->close();
 
-    fc->_destSizeInBytes = fc->get_file_size(fc->dest);
+    fc->_destSizeInBytes = std::filesystem::file_size(fc->dest);
     if (fc->_sourceSizeInBytes != fc->_destSizeInBytes)
     {
         throw FILESIZE_MISMATCH;
@@ -216,8 +216,10 @@ int main(int argc, char** argv)
     std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
     t.set_hash_inline(INLINEHASH);
 
-    std::cout << "running bar.set_maximum(t._get_total_size());" << std::endl;
-    bar.set_maximum(t._get_total_size());
+    std::cout << "running size_t totalSize = t._get_total_size();" << std::endl;
+    size_t totalSize = t._get_total_size();
+    std::cout << "total size is " << totalSize << " bytes" << std::endl;
+    bar.set_maximum(totalSize);
     std::cout << "running size_t numFiles(t._gatherer.num_files());" << std::endl;
     size_t numFiles(t._gatherer.num_files());
     std::cout << "running std::vector<std::filesystem::path>* sources(t._gatherer.get());" << std::endl;
@@ -234,8 +236,11 @@ int main(int argc, char** argv)
                 t._destFiles->at(i)
             );
         bar.increment(transferred);
-        std::cout << "Transfer is " << std::round(bar.get());
-        std::cout << " % complete" << std::endl;
+        bar._calculate_percentage();
+        std::cout << "Transfer is " << std::round(bar.get()) << "% complete";
+        std::cout << "(" << transferred << " of " << totalSize << " bytes copied)" << std::endl;
+        std::cout << "bar.is_complete(): " << (bar.is_complete() ? "true" : "false") << std::endl;
+        std::cout << "bar._maximum: " << bar._maximum << std::endl;
         /* bar.get_bar(status, progressBarWidth);
         for (size_t i(0); i < progressBarWidth; ++i)
         {
@@ -243,7 +248,7 @@ int main(int argc, char** argv)
         }
         std::cout << "\r"; */
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();
 

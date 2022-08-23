@@ -1,5 +1,14 @@
 TODO
 
+- build in check if file already exists
+- re-copy failed file
+- add filesystem copy and profile
 - check that copier is actually reset on reset()
 - check that src and dest files are actually ordered together or otherwise make them in order
-
+- multiple destination containers
+    - check if on same volume
+    - diff volumes simultaneous
+    - same volume sequential transfers
+- profile multiple simul copiers
+- stage sequential transfers with multiple ring buffers
+- thread simul transfers from single source asset queue
