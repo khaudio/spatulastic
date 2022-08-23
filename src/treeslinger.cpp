@@ -4,7 +4,9 @@ TreeSlinger::TreeSlinger() :
 _sourceHashed(false),
 _destHashed(false),
 _hashInline(true),
-_parentPathLength(0)
+_parentPathLength(0),
+_size(0),
+_transferred(0)
 {
     this->_destFiles = new std::vector<std::filesystem::path>();
     this->_sourceChecksums = new std::vector<char[16]>();
@@ -47,10 +49,11 @@ std::filesystem::path TreeSlinger::relative_dest(
     }
     #endif
 
-    return destDir += std::filesystem::path(srcString.substr(
+    destDir += std::filesystem::path(srcString.substr(
             parentLength,
             srcString.size() - parentLength
         ));
+    return std::filesystem::canonical(destDir);
 }
 
 inline std::filesystem::path TreeSlinger::_strip_parent_path(
@@ -86,10 +89,11 @@ inline std::filesystem::path TreeSlinger::_get_relative_dest(
     #endif
     
     std::string redirected(this->destination.string());
-    return redirected += sourceAsset.string().substr(
+    redirected += sourceAsset.string().substr(
             this->_parentPathLength,
             sourceAsset.string().size()
         );
+    return std::filesystem::path(redirected).lexically_normal();
 }
 
 void TreeSlinger::_create_copiers(int num)
@@ -115,9 +119,18 @@ void TreeSlinger::_reset_copiers()
 
 void TreeSlinger::_create_dest_dir_structure()
 {
+    #if _DEBUG
+    std::cout << "Redirecting directories " << std::endl;
+    #endif
     for (const std::filesystem::path p: *(this->_gatherer.get_directories()))
     {
+        #if _DEBUG
+        std::cout << "\tRedirecting directory " << p << " to destination" << std::endl;
+        #endif
         std::filesystem::path redirected(_get_relative_dest(p));
+        #if _DEBUG
+        std::cout << "\t\tCreating directory " << redirected << std::endl;
+        #endif
         /* std::filesystem::create_directory(redirected, p); */
         std::filesystem::create_directories(redirected);
     }
@@ -132,10 +145,20 @@ void TreeSlinger::_enumerate_dest_files()
     }
 }
 
+size_t TreeSlinger::_get_total_size()
+{
+    this->_size = 0;
+    for (const std::filesystem::path p: *(this->_gatherer.get()))
+    {
+        this->_size += std::filesystem::file_size(p);
+    }
+    return this->_size;
+}
+
 void TreeSlinger::_allocate_checksums()
 {
     size_t numFiles = this->_gatherer.num_files();
-    for (int i(0); i < numFiles; ++i)
+    for (size_t i(0); i < numFiles; ++i)
     {
         /* char srcBuff[16];
         char destBuff[16];
@@ -186,22 +209,18 @@ void TreeSlinger::_create_csv()
         is the file and hash ordering really consistent here... ????
 
         add actual date and time stamp
-
-        make dest path absolute?
-        ../build in csv is not all that helpful, especially when
-        the report is IN "build"; i.e., relative path is incorrect
-        when viewed in the csv
     */
 
 
-    // #if _DEBUG
-    // if (this->_sourceChecksums->empty()) throw SOURCE_NOT_HASHED;
-    // if (this->_destChecksums->empty()) throw DEST_NOT_HASHED;
-    // #endif
+    /* #if _DEBUG
+    if (this->_sourceChecksums->empty()) throw SOURCE_NOT_HASHED;
+    if (this->_destChecksums->empty()) throw DEST_NOT_HASHED;
+    #endif */
 
     std::ofstream report;
     std::stringstream filename;
-    std::wstring wseparator(&(std::filesystem::path::preferred_separator));
+    std::wstring wseparator;
+    wseparator += std::filesystem::path::preferred_separator;
     std::string separator(wseparator.begin(), wseparator.end());
     size_t numFiles(this->_gatherer.num_files());
 
@@ -217,7 +236,7 @@ void TreeSlinger::_create_csv()
     report.open(filename.str(), std::ofstream::out);
     report << "Filename," << this->algorithm << " Checksum" << std::endl;
 
-    for (int i(0); i < numFiles; ++i)
+    for (size_t i(0); i < numFiles; ++i)
     {
         report << this->_destFiles->at(i);
         report << ",";
@@ -231,7 +250,7 @@ void TreeSlinger::_create_csv()
 
 void TreeSlinger::set_source(std::filesystem::path sourcePath)
 {
-    this->source = sourcePath;
+    this->source = std::filesystem::canonical(sourcePath);
     this->_parentPathLength = this->source.parent_path().string().size();
     this->_gatherer.set(this->source);
     this->_destFiles->reserve(this->_gatherer.num_files());
@@ -239,7 +258,7 @@ void TreeSlinger::set_source(std::filesystem::path sourcePath)
 
 void TreeSlinger::set_destination(std::filesystem::path destPath)
 {
-    this->destination = destPath;
+    this->destination = std::filesystem::canonical(destPath);
 }
 
 void TreeSlinger::set_hash_algorithm(const char* algo)
@@ -250,6 +269,32 @@ void TreeSlinger::set_hash_algorithm(const char* algo)
 void TreeSlinger::set_hash_inline(bool hashInline)
 {
     this->_hashInline = true;
+}
+
+void TreeSlinger::_serve_files()
+{
+    while (1)
+    {
+        
+    }
+}
+
+// std::filesystem::path TreeSlinger::_get_next_file()
+// {
+    
+// }
+
+size_t TreeSlinger::_copy_file(
+        FileCopy* copier,
+        std::filesystem::path srcAsset,
+        std::filesystem::path destAsset
+    )
+{
+    copier->reset();
+    copier->open_source(srcAsset);
+    copier->open_dest(destAsset);
+    this->_transferred += copier->execute();
+    return this->_transferred;
 }
 
 // int TreeSlinger::execute()

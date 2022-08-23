@@ -1,0 +1,4 @@
+TODO
+
+empty files are not transferred
+check that src and dest files are actually ordered together or otherwise make them in order

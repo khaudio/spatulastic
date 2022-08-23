@@ -46,13 +46,29 @@ size_t FileCopy::get_file_size(std::filesystem::path filepath)
     return std::filesystem::file_size(filepath);
 }
 
-void FileCopy::open_source(const char* filepath)
+void FileCopy::open_source(std::filesystem::path filepath)
 {
     /* Opens source file and gets file size */
     this->source = filepath;
-    
     get_source_size();
     this->_inStream.open(this->source, std::ios::binary);
+}
+
+
+void FileCopy::open_source(const char* filepath)
+{
+    /* Opens source file and gets file size */
+        this->source = filepath;
+        
+        get_source_size();
+        this->_inStream.open(this->source, std::ios::binary);
+}
+
+void FileCopy::open_dest(std::filesystem::path filepath)
+{
+    /* Opens new destination file */
+    this->dest = filepath;
+    this->_outStream.open(this->dest, std::ios::binary);
 }
 
 void FileCopy::open_dest(const char* filepath)

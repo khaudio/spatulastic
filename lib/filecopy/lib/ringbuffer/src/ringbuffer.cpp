@@ -488,6 +488,27 @@ void RingBuffer<T>::read_samples(T* data, size_t length, bool force)
 }
 
 template <typename T>
+const std::vector<T> RingBuffer<T>::read_first(bool force)
+{
+    rotate_read_index();
+    return read(force);
+}
+
+template <typename T>
+void RingBuffer<T>::read_bytes_first(uint8_t* data, size_t numBytes, bool force)
+{
+    rotate_read_index();
+    return read_bytes(data, numBytes, force);
+}
+
+template <typename T>
+void RingBuffer<T>::read_samples_first(T* data, size_t length, bool force)
+{
+    rotate_read_index();
+    return read_samples(data, length, force);
+}
+
+template <typename T>
 int RingBuffer<T>::write(T data, bool force)
 {
     /* Write a single sample */
@@ -564,6 +585,34 @@ size_t RingBuffer<T>::write_samples(T* data, size_t length, bool force)
     /* Write specified number of samples */
     std::vector<T> converted(data, data + length);
     return write(converted, force);
+}
+
+template <typename T>
+int RingBuffer<T>::write_first(T data, bool force)
+{
+    rotate_processing_index();
+    return write(data, force);
+}
+
+template <typename T>
+int RingBuffer<T>::write_first(std::vector<T> data, bool force)
+{
+    rotate_processing_index();
+    return write(data, force);
+}
+
+template <typename T>
+size_t RingBuffer<T>::write_bytes_first(uint8_t* data, size_t numBytes, bool force)
+{
+    rotate_processing_index();
+    return write_bytes(data, numBytes, force);
+}
+
+template <typename T>
+size_t RingBuffer<T>::write_samples_first(T* data, size_t length, bool force)
+{
+    rotate_processing_index();
+    return write_samples(data, length, force);
 }
 
 template <typename T>

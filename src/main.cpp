@@ -189,6 +189,11 @@ int main(int argc, char** argv)
     
     std::cout << "running..." << std::endl;
 
+
+    BasicProgressBar<double> bar;
+    char status[41];
+    size_t progressBarWidth = sizeof(status) - 1;
+
     std::filesystem::path src("../example_data");
     std::filesystem::path dest("../build");
     
@@ -210,6 +215,28 @@ int main(int argc, char** argv)
     t._allocate_checksums();
     std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
     t.set_hash_inline(INLINEHASH);
+
+
+    bar.set_maximum(t._get_total_size());
+    size_t numFiles(t._gatherer.num_files());
+    std::vector<std::filesystem::path>* sources(t._gatherer.get());
+    for (size_t i(0); i < numFiles; ++i)
+    {
+        size_t transferred = t._copy_file(
+                &(t._copiers[0]),
+                sources->at(i),
+                t._destFiles->at(i)
+            );
+        bar.increment(transferred);
+        bar.get_bar(status, progressBarWidth);
+        for (size_t i(0); i < progressBarWidth; ++i)
+        {
+            std::cout << status[i];
+        }
+        std::cout << "\r";
+    }
+    std::cout << std::endl;
+    
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();
     

@@ -51,7 +51,9 @@ public:
     static size_t get_file_size(const char* filepath);
     static size_t get_file_size(std::filesystem::path filepath);
     
+    void open_source(std::filesystem::path filepath);
     void open_source(const char* filepath);
+    void open_dest(std::filesystem::path filepath);
     void open_dest(const char* filepath);
     void open_dest();
     

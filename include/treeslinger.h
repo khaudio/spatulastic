@@ -26,6 +26,7 @@ protected:
 public:
     bool _sourceHashed, _destHashed, _hashInline;
     int _parentPathLength;
+    size_t _size, _transferred;
     GatherDir _gatherer;
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
@@ -44,6 +45,7 @@ public:
     
     virtual void _create_dest_dir_structure();
     virtual void _enumerate_dest_files();
+    virtual size_t _get_total_size();
     virtual void _allocate_checksums();
     virtual bool _checksums_allocated();
     
@@ -68,6 +70,14 @@ public:
     virtual void set_destination(std::filesystem::path destPath);
     virtual void set_hash_algorithm(const char* algo);
     virtual void set_hash_inline(bool hashInline = true);
+    
+    virtual void _serve_files();
+    // virtual std::filesystem::path _get_next_file();
+    virtual size_t _copy_file(
+            FileCopy* copier,
+            std::filesystem::path srcAsset,
+            std::filesystem::path destAsset
+        );
     
     // virtual int execute();
     // virtual bool verify();

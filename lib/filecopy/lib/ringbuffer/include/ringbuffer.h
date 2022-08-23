@@ -116,6 +116,11 @@ public:
     virtual void read_bytes(uint8_t* data, size_t numBytes, bool force = false);
     virtual void read_samples(T* data, size_t length, bool force = false);
 
+    virtual const std::vector<T> read_first(bool force = false);
+    virtual void read_bytes_first(uint8_t* data, size_t numBytes, bool force = false);
+    virtual void read_samples_first(T* data, size_t length, bool force = false);
+
+
 /*                               Write                              */
 
 public:
@@ -123,6 +128,11 @@ public:
     virtual int write(std::vector<T> data, bool force = false);
     virtual size_t write_bytes(uint8_t* data, size_t numBytes, bool force = false);
     virtual size_t write_samples(T* data, size_t length, bool force = false);
+    
+    virtual int write_first(T data, bool force = false);
+    virtual int write_first(std::vector<T> data, bool force = false);
+    virtual size_t write_bytes_first(uint8_t* data, size_t numBytes, bool force = false);
+    virtual size_t write_samples_first(T* data, size_t length, bool force = false);
 
 /*                             Transform                            */
 
