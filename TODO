@@ -1,4 +1,5 @@
 TODO
 
-empty files are not transferred
-check that src and dest files are actually ordered together or otherwise make them in order
+- check that copier is actually reset on reset()
+- check that src and dest files are actually ordered together or otherwise make them in order
+

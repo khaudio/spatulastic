@@ -3,7 +3,7 @@
 
 /* Whether to hash the source file
 while it's being moved in the ring buffer */
-#define INLINEHASH                      true
+#define INLINEHASH                  false
 
 
 void hash_data(FileCopy* fc, MD5* hasher);
@@ -216,30 +216,37 @@ int main(int argc, char** argv)
     std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
     t.set_hash_inline(INLINEHASH);
 
-
+    std::cout << "running bar.set_maximum(t._get_total_size());" << std::endl;
     bar.set_maximum(t._get_total_size());
+    std::cout << "running size_t numFiles(t._gatherer.num_files());" << std::endl;
     size_t numFiles(t._gatherer.num_files());
+    std::cout << "running std::vector<std::filesystem::path>* sources(t._gatherer.get());" << std::endl;
     std::vector<std::filesystem::path>* sources(t._gatherer.get());
+    std::cout << "looping " << numFiles << " times" << std::endl;
     for (size_t i(0); i < numFiles; ++i)
     {
+        std::cout << "Source file:\t" << sources->at(i).string() << std::endl;
+        std::cout << "Dest file:\t" << t._destFiles->at(i).string() << std::endl;
+
         size_t transferred = t._copy_file(
                 &(t._copiers[0]),
                 sources->at(i),
                 t._destFiles->at(i)
             );
         bar.increment(transferred);
-        bar.get_bar(status, progressBarWidth);
+        std::cout << "Transfer is " << std::round(bar.get());
+        std::cout << " % complete" << std::endl;
+        /* bar.get_bar(status, progressBarWidth);
         for (size_t i(0); i < progressBarWidth; ++i)
         {
             std::cout << status[i];
         }
-        std::cout << "\r";
+        std::cout << "\r"; */
     }
     std::cout << std::endl;
-    
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();
-    
+
     std::cout << "done." << std::endl;
 
     return 0;

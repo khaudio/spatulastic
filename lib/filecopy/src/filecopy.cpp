@@ -262,6 +262,12 @@ size_t FileCopy::write_processed_from_buffer()
 size_t FileCopy::execute()
 {
     #if _DEBUG
+    std::cout << "Executing transfer:" << std::endl;
+    std::cout << "Moving " << this->source.string();
+    std::cout << " to " << this->dest.string() << std::endl;
+    #endif
+
+    #if _DEBUG
     if (this->source.empty())
     {
         throw SOURCE_NOT_SET;
@@ -272,21 +278,37 @@ size_t FileCopy::execute()
     }
     #endif
 
+    #if _DEBUG
+    std::cout << "Assets not empty; proceeding..." << std::endl;
+    #endif
+
     /* Executes copy and blocks until transfer is complete */
     this->started = true;
 
     while (this->_buff.available() && this->_inStream.is_open())
     {
+        #if _DEBUG
+        std::cout << "Prebuffering source..." << std::endl;
+        #endif
         read_to_buffer();
     }
     while (!complete())
     {
+        #if _DEBUG
+        std::cout << "FileCopy::execute cycling..." << std::endl;
+        #endif
         write_from_buffer();
         read_to_buffer();
     }
 
+    #if _DEBUG
+    std::cout << "Closing files..." << std::endl;
+    #endif
     close();
-    
+
+    #if _DEBUG
+    std::cout << "Checking dest file size" << std::endl;
+    #endif
     this->_destSizeInBytes = get_file_size(this->dest);
 
     if (this->_sourceSizeInBytes != this->_destSizeInBytes)

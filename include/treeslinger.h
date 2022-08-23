@@ -30,7 +30,7 @@ public:
     GatherDir _gatherer;
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
-    std::vector<char[16]> *_sourceChecksums, *_destChecksums;
+    // std::vector<char[16]> *_sourceChecksums, *_destChecksums;
     
     virtual std::filesystem::path _strip_parent_path(
             std::filesystem::path asset

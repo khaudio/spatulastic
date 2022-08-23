@@ -9,14 +9,14 @@ _size(0),
 _transferred(0)
 {
     this->_destFiles = new std::vector<std::filesystem::path>();
-    this->_sourceChecksums = new std::vector<char[16]>();
-    this->_destChecksums = new std::vector<char[16]>();
+    // this->_sourceChecksums = new std::vector<char[16]>();
+    // this->_destChecksums = new std::vector<char[16]>();
 }
 
 TreeSlinger::~TreeSlinger()
 {
-    delete this->_sourceChecksums;
-    delete this->_destChecksums;
+    // delete this->_sourceChecksums;
+    // delete this->_destChecksums;
 }
 
 std::filesystem::path TreeSlinger::relative_dest(
@@ -125,11 +125,11 @@ void TreeSlinger::_create_dest_dir_structure()
     for (const std::filesystem::path p: *(this->_gatherer.get_directories()))
     {
         #if _DEBUG
-        std::cout << "\tRedirecting directory " << p << " to destination" << std::endl;
+        std::cout << "Redirecting directory " << p << " to destination" << std::endl;
         #endif
         std::filesystem::path redirected(_get_relative_dest(p));
         #if _DEBUG
-        std::cout << "\t\tCreating directory " << redirected << std::endl;
+        std::cout << "Creating directory " << redirected << std::endl;
         #endif
         /* std::filesystem::create_directory(redirected, p); */
         std::filesystem::create_directories(redirected);
@@ -138,7 +138,7 @@ void TreeSlinger::_create_dest_dir_structure()
 
 void TreeSlinger::_enumerate_dest_files()
 {
-    for (const std::filesystem::path p: *(this->_gatherer.get()))
+    for (const std::filesystem::path& p: *(this->_gatherer.get()))
     {
         std::filesystem::path redirected(_get_relative_dest(p));
         this->_destFiles->emplace_back(redirected);
@@ -148,7 +148,7 @@ void TreeSlinger::_enumerate_dest_files()
 size_t TreeSlinger::_get_total_size()
 {
     this->_size = 0;
-    for (const std::filesystem::path p: *(this->_gatherer.get()))
+    for (const std::filesystem::path& p: *(this->_gatherer.get()))
     {
         this->_size += std::filesystem::file_size(p);
     }
@@ -169,10 +169,12 @@ void TreeSlinger::_allocate_checksums()
 
 bool TreeSlinger::_checksums_allocated()
 {
-    return (
-            (this->_sourceChecksums->size() > 0)
-            && (this->_destChecksums->size() > 0)
-        );
+    // return (
+    //         (this->_sourceChecksums->size() > 0)
+    //         && (this->_destChecksums->size() > 0)
+    //     );
+
+    return true;
 }
 
 void TreeSlinger::_hash_source()
@@ -290,10 +292,44 @@ size_t TreeSlinger::_copy_file(
         std::filesystem::path destAsset
     )
 {
+    #if _DEBUG
+    std::cout << "Resetting copier" << std::endl;
+    #endif
+
     copier->reset();
+
+    #if _DEBUG
+    std::cout << "Copier is ";
+    std::cout << (copier->ready() ? "" : "not ");
+    std::cout << "ready" << std::endl;
+    #endif
+
+    #if _DEBUG
+    std::cout << "Opening source: ";
+    std::cout << srcAsset.string() << std::endl;
+    #endif
+
     copier->open_source(srcAsset);
+
+    #if _DEBUG
+    std::cout << "Opening dest: ";
+    std::cout << destAsset.string() << std::endl;
+    #endif
+
     copier->open_dest(destAsset);
-    this->_transferred += copier->execute();
+
+    #if _DEBUG
+    std::cout << "Executing..." << std::endl;
+    #endif
+
+    size_t numBytes = copier->execute();
+    this->_transferred += numBytes;
+    
+    #if _DEBUG
+    std::cout << "Execute completed; transferred ";
+    std::cout << this->_transferred << " bytes" << std::endl;
+    #endif
+
     return this->_transferred;
 }
 

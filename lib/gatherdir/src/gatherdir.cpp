@@ -23,9 +23,18 @@ void GatherDir::set(std::filesystem::path target)
     {
         if (entryPoint.is_directory())
         {
+            #if _DEBUG
+            std::cout << "Found directory " << entryPoint.path() << std::endl;
+            #endif
             this->_directories->emplace_back(entryPoint.path());
         }
-        this->_paths->emplace_back(entryPoint.path());
+        else
+        {
+            #if _DEBUG
+            std::cout << "Found asset " << entryPoint.path() << std::endl;
+            #endif
+            this->_paths->emplace_back(entryPoint.path());
+        }
     }
 }
 
@@ -61,7 +70,7 @@ size_t GatherDir::num_directories()
 
 size_t GatherDir::num_files()
 {
-    return this->_paths->size() - this->_directories->size();
+    return this->_paths->size();
 }
 
 void GatherDir::print()
