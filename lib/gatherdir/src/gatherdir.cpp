@@ -3,13 +3,13 @@
 
 GatherDir::GatherDir()
 {
-    this->_paths = new std::vector<std::filesystem::path>();
+    this->_assets = new std::vector<std::filesystem::path>();
     this->_directories = new std::vector<std::filesystem::path>();
 }
 
 GatherDir::~GatherDir()
 {
-    delete this->_paths;
+    delete this->_assets;
     delete this->_directories;
 }
 
@@ -33,7 +33,7 @@ void GatherDir::set(std::filesystem::path target)
             #if _DEBUG
             std::cout << "Found asset " << entryPoint.path() << std::endl;
             #endif
-            this->_paths->emplace_back(entryPoint.path());
+            this->_assets->emplace_back(entryPoint.path());
         }
     }
 }
@@ -60,7 +60,7 @@ std::vector<std::filesystem::path>* GatherDir::get_directories()
 
 std::vector<std::filesystem::path>* GatherDir::get()
 {
-    return this->_paths;
+    return this->_assets;
 }
 
 size_t GatherDir::num_directories()
@@ -70,12 +70,12 @@ size_t GatherDir::num_directories()
 
 size_t GatherDir::num_files()
 {
-    return this->_paths->size();
+    return this->_assets->size();
 }
 
 void GatherDir::print()
 {
-    for (const std::filesystem::path& p: *this->_paths)
+    for (const std::filesystem::path& p: *this->_assets)
     {
         std::cout << p.string() << std::endl;
     }

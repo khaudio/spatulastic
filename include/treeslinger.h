@@ -2,6 +2,9 @@
 #define TREESLINGER_h
 
 #include <sstream>
+#include <thread>
+#include <atomic>
+#include <mutex>
 
 #include "filecopy.h"
 #include "gatherdir.h"
@@ -26,8 +29,11 @@ protected:
 public:
     bool _sourceHashed, _destHashed, _hashInline;
     int _parentPathLength;
+    std::atomic<int> _sourceQueueIndex;
+    std::mutex _sourceQueueLock, _progressLock;
     size_t _size, _transferred;
     GatherDir _gatherer;
+    BasicProgressBar<double> _progress;
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
     // std::vector<char[16]> *_sourceChecksums, *_destChecksums;
@@ -42,6 +48,11 @@ public:
     virtual void _create_copiers(int num);
     virtual int _num_copiers();
     virtual void _reset_copiers();
+
+    virtual void _increment_progress(size_t chunk);
+    virtual int _get_next_source_file();
+    virtual void _run_copier(FileCopy* copier);
+    // virtual std::thread spawn_threads();
     
     virtual void _create_dest_dir_structure();
     virtual void _enumerate_dest_files();
@@ -71,14 +82,14 @@ public:
     virtual void set_hash_algorithm(const char* algo);
     virtual void set_hash_inline(bool hashInline = true);
     
-    virtual void _serve_files();
-    // virtual std::filesystem::path _get_next_file();
     virtual size_t _copy_file(
             FileCopy* copier,
             std::filesystem::path srcAsset,
             std::filesystem::path destAsset
         );
     
+    virtual bool is_complete();
+
     // virtual int execute();
     // virtual bool verify();
     // virtual std::vector<char[16]>* get_checksums();

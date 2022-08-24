@@ -488,21 +488,21 @@ void RingBuffer<T>::read_samples(T* data, size_t length, bool force)
 }
 
 template <typename T>
-const std::vector<T> RingBuffer<T>::read_first(bool force)
+const std::vector<T> RingBuffer<T>::read_initial(bool force)
 {
     rotate_read_index();
     return read(force);
 }
 
 template <typename T>
-void RingBuffer<T>::read_bytes_first(uint8_t* data, size_t numBytes, bool force)
+void RingBuffer<T>::read_bytes_initial(uint8_t* data, size_t numBytes, bool force)
 {
     rotate_read_index();
     return read_bytes(data, numBytes, force);
 }
 
 template <typename T>
-void RingBuffer<T>::read_samples_first(T* data, size_t length, bool force)
+void RingBuffer<T>::read_samples_initial(T* data, size_t length, bool force)
 {
     rotate_read_index();
     return read_samples(data, length, force);
@@ -588,28 +588,28 @@ size_t RingBuffer<T>::write_samples(T* data, size_t length, bool force)
 }
 
 template <typename T>
-int RingBuffer<T>::write_first(T data, bool force)
+int RingBuffer<T>::write_initial(T data, bool force)
 {
     rotate_processing_index();
     return write(data, force);
 }
 
 template <typename T>
-int RingBuffer<T>::write_first(std::vector<T> data, bool force)
+int RingBuffer<T>::write_initial(std::vector<T> data, bool force)
 {
     rotate_processing_index();
     return write(data, force);
 }
 
 template <typename T>
-size_t RingBuffer<T>::write_bytes_first(uint8_t* data, size_t numBytes, bool force)
+size_t RingBuffer<T>::write_bytes_initial(uint8_t* data, size_t numBytes, bool force)
 {
     rotate_processing_index();
     return write_bytes(data, numBytes, force);
 }
 
 template <typename T>
-size_t RingBuffer<T>::write_samples_first(T* data, size_t length, bool force)
+size_t RingBuffer<T>::write_samples_initial(T* data, size_t length, bool force)
 {
     rotate_processing_index();
     return write_samples(data, length, force);
@@ -641,24 +641,24 @@ void RingBuffer<T>::set_buffer_processed(uint8_t* bufferPtr, bool state)
 }
 
 template <typename T>
-bool RingBuffer<T>::_buffer_processed(uint8_t ringIndex)
+bool RingBuffer<T>::_is_buffer_processed(uint8_t ringIndex)
 {
     /* Returns whether the specified buffer has been processed */
     return this->bufferProcessedState[ringIndex];
 }
 
 template <typename T>
-bool RingBuffer<T>::buffer_processed(std::vector<T>* bufferPtr)
+bool RingBuffer<T>::is_buffer_processed(std::vector<T>* bufferPtr)
 {
     /* Returns whether the specified buffer has been processed */
-    return _buffer_processed(get_ring_index(bufferPtr));
+    return _is_buffer_processed(get_ring_index(bufferPtr));
 }
 
 template <typename T>
-bool RingBuffer<T>::buffer_processed(uint8_t* bufferPtr)
+bool RingBuffer<T>::is_buffer_processed(uint8_t* bufferPtr)
 {
     /* Returns whether the specified buffer has been processed */
-    return _buffer_processed(get_ring_index(bufferPtr));
+    return _is_buffer_processed(get_ring_index(bufferPtr));
 }
 
 template class Buffer::RingBuffer<int8_t>;

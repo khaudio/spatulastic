@@ -5,6 +5,7 @@ _sourceHashed(false),
 _destHashed(false),
 _hashInline(true),
 _parentPathLength(0),
+_sourceQueueIndex(0),
 _size(0),
 _transferred(0)
 {
@@ -117,6 +118,38 @@ void TreeSlinger::_reset_copiers()
     }
 }
 
+int TreeSlinger::_get_next_source_file()
+{
+    const std::lock_guard<std::mutex> lock(this->_sourceQueueLock);
+    return this->_sourceQueueIndex++;
+}
+
+void TreeSlinger::_increment_progress(size_t chunk)
+{
+    const std::lock_guard<std::mutex> lock(this->_progressLock);
+    this->_progress.increment(chunk);
+}
+
+void TreeSlinger::_run_copier(FileCopy* copier)
+{
+    while (!this->is_complete())
+    {
+        int index(_get_next_source_file());
+        std::vector<std::filesystem::path>* sources = this->_gatherer.get();
+        copier->reset();
+        copier->open_source(sources->at(index));
+        copier->open_dest(this->_destFiles->at(index));
+        std::this_thread::yield();
+        size_t bytesCopied = copier->execute();
+        _increment_progress(bytesCopied);
+    }
+}
+
+// std::thread TreeSlinger::spawn_threads()
+// {
+//     return std::thread(&TreeSlinger::_run_copier, this);
+// }
+
 void TreeSlinger::_create_dest_dir_structure()
 {
     #if _DEBUG
@@ -205,15 +238,6 @@ void TreeSlinger::_hash_dest()
 
 void TreeSlinger::_create_csv()
 {
-
-
-    /*
-        is the file and hash ordering really consistent here... ????
-
-        add actual date and time stamp
-    */
-
-
     /* #if _DEBUG
     if (this->_sourceChecksums->empty()) throw SOURCE_NOT_HASHED;
     if (this->_destChecksums->empty()) throw DEST_NOT_HASHED;
@@ -255,6 +279,8 @@ void TreeSlinger::set_source(std::filesystem::path sourcePath)
     this->source = std::filesystem::canonical(sourcePath);
     this->_parentPathLength = this->source.parent_path().string().size();
     this->_gatherer.set(this->source);
+    this->_progress.set_maximum(_get_total_size());
+    this->_progress.set(size_t(0));
     this->_destFiles->reserve(this->_gatherer.num_files());
 }
 
@@ -272,19 +298,6 @@ void TreeSlinger::set_hash_inline(bool hashInline)
 {
     this->_hashInline = true;
 }
-
-void TreeSlinger::_serve_files()
-{
-    while (1)
-    {
-        
-    }
-}
-
-// std::filesystem::path TreeSlinger::_get_next_file()
-// {
-    
-// }
 
 size_t TreeSlinger::_copy_file(
         FileCopy* copier,
@@ -324,6 +337,7 @@ size_t TreeSlinger::_copy_file(
 
     size_t numBytes = copier->execute();
     this->_transferred += numBytes;
+    this->_progress.set(this->_transferred);
     
     #if _DEBUG
     std::cout << "Execute completed; transferred ";
@@ -331,6 +345,11 @@ size_t TreeSlinger::_copy_file(
     #endif
 
     return this->_transferred;
+}
+
+bool TreeSlinger::is_complete()
+{
+    return this->_progress.is_complete();
 }
 
 // int TreeSlinger::execute()

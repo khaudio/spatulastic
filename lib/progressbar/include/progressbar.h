@@ -12,8 +12,8 @@ class RelativeProgress
 {
 protected:
     T
-        _percentageComplete,
-        _chunkSize;
+        _relativeState,
+        _relativeChunkSize;
     
 public:
     RelativeProgress();
@@ -26,6 +26,7 @@ public:
     void decrement(T value = 0.0);
     
     T get();
+    T get_percentage();
     bool is_complete();
 
 };
@@ -36,7 +37,10 @@ class AbsoluteProgress : public RelativeProgress<T>
 {
 protected:
 public:
-    size_t _maximum, _state, _absoluteChunkSize;
+    size_t
+        _absoluteMaximum,
+        _absoluteState,
+        _absoluteChunkSize;
     
     bool _initialized();
     T _calculate_percentage();

@@ -116,10 +116,10 @@ public:
     virtual void read_bytes(uint8_t* data, size_t numBytes, bool force = false);
     virtual void read_samples(T* data, size_t length, bool force = false);
 
-    virtual const std::vector<T> read_first(bool force = false);
-    virtual void read_bytes_first(uint8_t* data, size_t numBytes, bool force = false);
-    virtual void read_samples_first(T* data, size_t length, bool force = false);
-
+    /* Initial read once the buffer is initialized */
+    virtual const std::vector<T> read_initial(bool force = false);
+    virtual void read_bytes_initial(uint8_t* data, size_t numBytes, bool force = false);
+    virtual void read_samples_initial(T* data, size_t length, bool force = false);
 
 /*                               Write                              */
 
@@ -129,23 +129,24 @@ public:
     virtual size_t write_bytes(uint8_t* data, size_t numBytes, bool force = false);
     virtual size_t write_samples(T* data, size_t length, bool force = false);
     
-    virtual int write_first(T data, bool force = false);
-    virtual int write_first(std::vector<T> data, bool force = false);
-    virtual size_t write_bytes_first(uint8_t* data, size_t numBytes, bool force = false);
-    virtual size_t write_samples_first(T* data, size_t length, bool force = false);
+    /* Initial write after data has been read to the buffer */
+    virtual int write_initial(T data, bool force = false);
+    virtual int write_initial(std::vector<T> data, bool force = false);
+    virtual size_t write_bytes_initial(uint8_t* data, size_t numBytes, bool force = false);
+    virtual size_t write_samples_initial(T* data, size_t length, bool force = false);
 
 /*                             Transform                            */
 
 protected:
     virtual void _set_buffer_processed(uint8_t ringIndex, bool state);
-    virtual bool _buffer_processed(uint8_t ringIndex);
+    virtual bool _is_buffer_processed(uint8_t ringIndex);
 
 public:
     virtual void set_buffer_processed(std::vector<T>* bufferPtr, bool state);
     virtual void set_buffer_processed(uint8_t* bufferPtr, bool state);
 
-    virtual bool buffer_processed(std::vector<T>* bufferPtr);
-    virtual bool buffer_processed(uint8_t* bufferPtr);
+    virtual bool is_buffer_processed(std::vector<T>* bufferPtr);
+    virtual bool is_buffer_processed(uint8_t* bufferPtr);
 };
 
 };

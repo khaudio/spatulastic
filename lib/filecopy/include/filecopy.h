@@ -41,6 +41,8 @@ public:
 
     Buffer::RingBuffer<char> _buff;
 
+    std::filesystem::path _rename_dest();
+
 public:
     bool started;
     std::filesystem::path source, dest;
@@ -67,6 +69,7 @@ public:
     size_t read_to_buffer();
     size_t write_from_buffer();
     size_t write_processed_from_buffer();
+    void pre_buffer_source();
     size_t execute();
 };
 

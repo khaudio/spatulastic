@@ -9,7 +9,7 @@ class GatherDir
 {
 protected:
     std::filesystem::path _entry;
-    std::vector<std::filesystem::path> *_directories, *_paths;
+    std::vector<std::filesystem::path> *_directories, *_assets;
 
 public:
     GatherDir();

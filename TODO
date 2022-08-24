@@ -1,9 +1,15 @@
 TODO
 
-- build in check if file already exists
+- rename FileCopy::complete() to is_complete()
+
+- add BasicProgressBar to TreeSlinger (_progress)
+    - set to 0 before transfer starts
+    - add increment() and all that to TreeSlinger member functions
+
+- add actual date and time stamp to TreeSlinger::_create_csv
+- allocate checksum buffers
 - re-copy failed file
 - add filesystem copy and profile
-- check that copier is actually reset on reset()
 - check that src and dest files are actually ordered together or otherwise make them in order
 - multiple destination containers
     - check if on same volume

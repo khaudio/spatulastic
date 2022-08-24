@@ -52,38 +52,38 @@ void FileCopy::open_source(const char* filepath)
     this->_inStream.open(this->source, std::ios::binary);
 }
 
-void FileCopy::open_dest(std::filesystem::path filepath)
+inline void FileCopy::open_dest(std::filesystem::path filepath)
 {
     /* Opens new destination file */
     this->dest = filepath;
-    this->_outStream.open(this->dest, std::ios::binary);
-}
-
-void FileCopy::open_dest(const char* filepath)
-{
-    /* Opens new destination file */
-    this->dest = filepath;
-    this->_outStream.open(this->dest, std::ios::binary);
-}
-
-void FileCopy::open_dest()
-{
-    /* Opens new destination file
-    with the same base filename as source file */
-    #if _DEBUG
-    if (this->source.empty())
-    {
-        throw SOURCE_NOT_SET;
-    }
-    #endif
-
-    this->dest.replace_filename(this->source.filename());
     if (!this->_overwrite && std::filesystem::exists(this->dest))
     {
         get_dest_size();
         return;
     }
     this->_outStream.open(this->dest, std::ios::binary);
+}
+
+void FileCopy::open_dest(const char* filepath)
+{
+    /* Opens new destination file */
+    open_dest(std::filesystem::path(filepath));
+}
+
+std::filesystem::path FileCopy::_rename_dest()
+{
+    #if _DEBUG
+    if (this->source.empty())
+    {
+        throw SOURCE_NOT_SET;
+    }
+    #endif
+    this->dest.replace_filename(this->source.filename());
+}
+
+void FileCopy::open_dest()
+{
+    open_dest(std::filesystem::path(_rename_dest()));
 }
 
 size_t FileCopy::get_source_size()
@@ -100,7 +100,7 @@ size_t FileCopy::get_dest_size()
 {
     /* Get destination file size */
     #if _DEBUG
-    if (!complete()) return 0;
+    if (started && !complete()) return 0;
     #endif
     
     if (!this->_destSizeInBytes)
@@ -134,6 +134,8 @@ bool FileCopy::complete()
 void FileCopy::reset()
 {
     close();
+    this->source = std::filesystem::path();
+    this->dest = std::filesystem::path();
     this->started = false;
     this->_firstWritten = false;
     this->_sourceSizeInBytes = 0;
@@ -160,7 +162,7 @@ size_t FileCopy::read_to_buffer()
     this->_inStream.read(bufferWriteByte, this->_buff.bufferLength);
 
     numBytesRead = this->_inStream.gcount();
-    
+
     if (!numBytesRead)
     {
         this->_inStream.close();
@@ -217,7 +219,8 @@ size_t FileCopy::write_from_buffer()
 
 size_t FileCopy::write_processed_from_buffer()
 {
-    /* Writes from the buffer out to the destination */
+    /* Writes data from the buffer out to the destination
+    only if it has been processed while in the buffer */
     size_t beforePosition, afterPosition(0), numBytesWritten(0);
     
     if (!this->started) this->started = true;
@@ -255,12 +258,21 @@ size_t FileCopy::write_processed_from_buffer()
     return numBytesWritten;
 }
 
+void FileCopy::pre_buffer_source()
+{
+    while (this->_buff.available() && this->_inStream.is_open())
+    {
+        read_to_buffer();
+    }
+}
+
 size_t FileCopy::execute()
 {
     #if _DEBUG
     std::cout << "Executing transfer:" << std::endl;
-    std::cout << "Moving " << this->source.string();
-    std::cout << " to " << this->dest.string() << std::endl;
+    std::cout << "Copying\n\t" << this->source.string();
+    std::cout << "\n\tto\n\t" << this->dest.string();
+    std::cout << std::endl;
     #endif
 
     #if _DEBUG
@@ -274,33 +286,48 @@ size_t FileCopy::execute()
     }
     #endif
 
-    #if _DEBUG
-    std::cout << "Assets not empty; proceeding..." << std::endl;
-    #endif
-
-    if (this->_destSizeInBytes && !_overwrite)
+    if (this->_destSizeInBytes && !this->_overwrite)
     {
+        /* If destination file exists, skip it */
+        #if _DEBUG
+        std::cout << "Destination file exists; skipping" << std::endl;
+        #endif
         goto copyComplete;
     }
+    #if _DEBUG
+    else if (this->_destSizeInBytes && this->_overwrite)
+    {
+        /* If destination file exists, overwrite it */
+        std::cout << "Destination file exists; overwriting: ";
+        std::cout << this->dest.string() << std::endl;
+    }
+    else if (!this->_destSizeInBytes)
+    {
+        /* If destination file does not exist, create it */
+        std::cout << "Creating destination file: ";
+        std::cout << this->dest.string() << std::endl;
+    }
+    #endif
 
     /* Executes copy and blocks until transfer is complete */
     this->started = true;
 
-    while (this->_buff.available() && this->_inStream.is_open())
-    {
-        #if _DEBUG
-        std::cout << "Prebuffering source..." << std::endl;
-        #endif
-        read_to_buffer();
-    }
+    pre_buffer_source();
     while (!complete())
     {
-        #if _DEBUG
-        std::cout << "FileCopy::execute cycling..." << std::endl;
-        #endif
         write_from_buffer();
         read_to_buffer();
     }
+
+    #if _DEBUG
+    if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
+    {
+        throw READ_WRITE_MISMATCH;
+    }
+    #endif
+
+    /* Jump to here if existing file was skipped */
+    copyComplete:
 
     #if _DEBUG
     std::cout << "Closing files..." << std::endl;
@@ -314,15 +341,6 @@ size_t FileCopy::execute()
 
     get_dest_size();
 
-    #if _DEBUG
-    if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
-    {
-        throw READ_WRITE_MISMATCH;
-    }
-    #endif
-
-    copyComplete:
-
     #ifdef _DEBUG
     if (this->_sourceSizeInBytes != this->_destSizeInBytes)
     {
@@ -330,5 +348,6 @@ size_t FileCopy::execute()
     }
     #endif
 
+    /* Return the actual file size */
     return this->_destSizeInBytes;
 }

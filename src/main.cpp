@@ -152,59 +152,30 @@ void execute_transfer(FileCopy* fc, bool sourceHashInline)
 
 int main(int argc, char** argv)
 {
-    /* std::cout << "Starting spatulastic..." << std::endl;
+    std::cout << "Starting spatulastic..." << std::endl;
     #if _DEBUG
     std::cout << "Debug mode enabled" << std::endl;
     #endif
-
-    GatherDir gatherer;
-    FileCopy fc;
 
     std::chrono::high_resolution_clock::time_point start, end;
     std::chrono::high_resolution_clock::duration duration;
     start = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Opening files... ";
+    std::cout << "Running..." << std::endl;
 
-    fc.open_source("../example_data/subfolder1/demodata.txt");
-    fc.open_dest();
-
-    std::cout << "Done" << std::endl;
-    std::cout << "Starting transfer..." << std::endl;
-
-    execute_transfer(&fc, INLINEHASH);
-
-    std::cout << "Transfer complete" << std::endl;
-    std::cout << "Spatulastic out!" << std::endl;
-    end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
-    std::cout << "Transfer took ";
-    std::cout << static_cast<double>(duration.count()) / 1000000;
-    std::cout << " ms" << std::endl;
-    std::ofstream log;
-    log.open("log.txt", std::ios::app);
-    log << "Source hashed " << (INLINEHASH ? "inline" : "after ") << "\t";
-    log << static_cast<double>(duration.count()) / 1000000 << " ms" << std::endl;
-    log.close(); */
-    
-    std::cout << "running..." << std::endl;
-
-
+    TreeSlinger t;
+    std::filesystem::path src("../example_data");
+    std::filesystem::path dest("../build");
     BasicProgressBar<double> bar;
     char status[41];
     size_t progressBarWidth = sizeof(status) - 1;
-
-    std::filesystem::path src("../example_data");
-    std::filesystem::path dest("../build");
     
-    TreeSlinger t;
     std::cout << "running t.set_source(src);" << std::endl;
     t.set_source(src);
     std::cout << "running t.set_destination(dest);" << std::endl;
     t.set_destination(dest);
     std::cout << "running t.set_hash_algorithm('md5');" << std::endl;
     t.set_hash_algorithm("md5");
-
     std::cout << "running t._create_copiers(1);" << std::endl;
     t._create_copiers(1);
     std::cout << "running t._create_dest_dir_structure();" << std::endl;
@@ -215,44 +186,35 @@ int main(int argc, char** argv)
     t._allocate_checksums();
     std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
     t.set_hash_inline(INLINEHASH);
-
     std::cout << "running size_t totalSize = t._get_total_size();" << std::endl;
     size_t totalSize = t._get_total_size();
     std::cout << "total size is " << totalSize << " bytes" << std::endl;
+    std::cout << "running bar.set_maximum(totalSize);" << std::endl;
     bar.set_maximum(totalSize);
     std::cout << "running size_t numFiles(t._gatherer.num_files());" << std::endl;
     size_t numFiles(t._gatherer.num_files());
     std::cout << "running std::vector<std::filesystem::path>* sources(t._gatherer.get());" << std::endl;
     std::vector<std::filesystem::path>* sources(t._gatherer.get());
-    std::cout << "looping " << numFiles << " times" << std::endl;
-    for (size_t i(0); i < numFiles; ++i)
-    {
-        std::cout << "Source file:\t" << sources->at(i).string() << std::endl;
-        std::cout << "Dest file:\t" << t._destFiles->at(i).string() << std::endl;
 
-        size_t transferred = t._copy_file(
-                &(t._copiers[0]),
-                sources->at(i),
-                t._destFiles->at(i)
-            );
-        bar.increment(transferred);
-        bar._calculate_percentage();
-        std::cout << "Transfer is " << std::round(bar.get()) << "% complete";
-        std::cout << "(" << transferred << " of " << totalSize << " bytes copied)" << std::endl;
-        std::cout << "bar.is_complete(): " << (bar.is_complete() ? "true" : "false") << std::endl;
-        std::cout << "bar._maximum: " << bar._maximum << std::endl;
-        /* bar.get_bar(status, progressBarWidth);
-        for (size_t i(0); i < progressBarWidth; ++i)
-        {
-            std::cout << status[i];
-        }
-        std::cout << "\r"; */
-    }
-    // std::cout << std::endl;
+    t._run_copier(&(t._copiers[0]));
+
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();
+    std::cout << "Transfer complete" << std::endl;
 
-    std::cout << "done." << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "Transfer took ";
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << static_cast<double>(duration.count()) / 1000000;
+    std::cout << " ms" << std::endl;
+    std::ofstream log;
+    log.open("log.txt", std::ios::app);
+    log << "Source hashed " << (INLINEHASH ? "inline" : "after ") << "\t";
+    log << (static_cast<double>(duration.count()) / 1000000);
+    log  << " ms" << std::endl;
+    log.close();
+    std::cout << "Spatulastic out!" << std::endl;
 
     return 0;
 }

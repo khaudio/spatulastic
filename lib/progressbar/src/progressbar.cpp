@@ -3,8 +3,8 @@
 
 template <typename T>
 RelativeProgress<T>::RelativeProgress() :
-_percentageComplete(0.0),
-_chunkSize(0.0)
+_relativeState(0.0),
+_relativeChunkSize(0.0)
 {
 }
 
@@ -17,49 +17,53 @@ RelativeProgress<T>::~RelativeProgress()
 template <typename T>
 void RelativeProgress<T>::set(T state)
 {
-    this->_percentageComplete = state;
+    this->_relativeState = state;
 }
 
 template <typename T>
 void RelativeProgress<T>::set_chunk_size(T chunk)
 {
-    this->_chunkSize = chunk;
+    this->_relativeChunkSize = chunk;
 }
 
 template <typename T>
 void RelativeProgress<T>::increment(T value)
 {
-    value = (value ? value : this->_chunkSize);
-    this->_percentageComplete += value;
+    value = (value ? value : this->_relativeChunkSize);
+    this->_relativeState += value;
 }
 
 
 template <typename T>
 void RelativeProgress<T>::decrement(T value)
 {
-    value = (value ? value : this->_chunkSize);
-    this->_percentageComplete -= value;
+    value = (value ? value : this->_relativeChunkSize);
+    this->_relativeState -= value;
 }
 
 template <typename T>
 T RelativeProgress<T>::get()
 {
-    return this->_percentageComplete;
+    return this->_relativeState;
+}
+
+template <typename T>
+T RelativeProgress<T>::get_percentage()
+{
+    return (this->_relativeState * 100);
 }
 
 template <typename T>
 bool RelativeProgress<T>::is_complete()
 {
-    T value = get();
-    return (value >= 100.0);
+    return (get() >= 1.0);
 }
-
 
 template <typename T>
 AbsoluteProgress<T>::AbsoluteProgress() :
 RelativeProgress<T>(),
-_maximum(0),
-_state(0),
+_absoluteMaximum(0),
+_absoluteState(0),
 _absoluteChunkSize(0)
 {
 }
@@ -72,26 +76,29 @@ AbsoluteProgress<T>::~AbsoluteProgress()
 template <typename T>
 bool AbsoluteProgress<T>::_initialized()
 {
-    return _maximum;
+    return _absoluteMaximum;
 }
 
 template <typename T>
 T AbsoluteProgress<T>::_calculate_percentage()
 {
-    this->_percentageComplete = (static_cast<T>(this->_state) / static_cast<T>(this->_maximum));
-    return this->_percentageComplete;
+    this->_relativeState = (
+            static_cast<T>(this->_absoluteState)
+            / static_cast<T>(this->_absoluteMaximum)
+        );
+    return this->_relativeState;
 }
 
 template <typename T>
 void AbsoluteProgress<T>::set_maximum(size_t maximum)
 {
-    this->_maximum = maximum;
+    this->_absoluteMaximum = maximum;
 }
 
 template <typename T>
 void AbsoluteProgress<T>::set(size_t state)
 {
-    this->_state = state;
+    this->_absoluteState = state;
     _calculate_percentage();
 }
 
@@ -105,7 +112,7 @@ template <typename T>
 void AbsoluteProgress<T>::increment(size_t value)
 {
     value = (value ? value : this->_absoluteChunkSize);
-    this->_state += value;
+    this->_absoluteState += value;
     _calculate_percentage();
 }
 
@@ -113,7 +120,7 @@ template <typename T>
 void AbsoluteProgress<T>::decrement(size_t value)
 {
     value = (value ? value : this->_absoluteChunkSize);
-    this->_state -= value;
+    this->_absoluteState -= value;
     _calculate_percentage();
 }
 

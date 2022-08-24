@@ -15,3 +15,20 @@ target_include_directories(ringbuffer
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_compile_definitions(ringbuffer
+    PRIVATE
+        RING_BUFFER_CHUNKSIZE=1024*1024*4
+        $<$<CONFIG:Debug>:DEBUG_BUILD;_DEBUG>
+        $<$<CONFIG:Release>:>
+    
+    PUBLIC
+        RING_BUFFER_CHUNKSIZE=1024*1024*4
+        $<$<CONFIG:Debug>:DEBUG_BUILD;_DEBUG>
+        $<$<CONFIG:Release>:>
+
+    INTERFACE
+        RING_BUFFER_CHUNKSIZE=1024*1024*4
+        $<$<CONFIG:Debug>:DEBUG_BUILD;_DEBUG>
+        $<$<CONFIG:Release>:>
+)
