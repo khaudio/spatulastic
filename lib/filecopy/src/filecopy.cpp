@@ -30,10 +30,32 @@ FileCopy::~FileCopy()
     close();
 }
 
-bool FileCopy::ready()
+inline void FileCopy::_check_paths_not_empty()
 {
-    /* Indicates if both files are open and ready to transfer */
-    return (this->_inStream.is_open() && this->_outStream.is_open());
+    if (this->source.empty())
+    {
+        throw SOURCE_NOT_SET;
+    }
+    if (this->dest.empty())
+    {
+        throw DEST_NOT_SET;
+    }
+}
+
+inline void FileCopy::_check_buffer_match()
+{
+    if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
+    {
+        throw READ_WRITE_MISMATCH;
+    }
+}
+
+inline void FileCopy::_check_file_size_match()
+{
+    if (this->_sourceSizeInBytes != this->_destSizeInBytes)
+    {
+        throw FILESIZE_MISMATCH;
+    }
 }
 
 void FileCopy::open_source(std::filesystem::path filepath)
@@ -100,9 +122,14 @@ size_t FileCopy::get_dest_size()
 {
     /* Get destination file size */
     #if _DEBUG
-    if (started && !complete()) return 0;
+    std::cout << "Checking dest file size" << std::endl;
+    if (started && !complete())
+    {
+        std::cerr << "Cannot get dest size; ";
+        std::cerr << "incomplete copy in progress" << std::endl;
+        return 0;
+    }
     #endif
-    
     if (!this->_destSizeInBytes)
     {
         this->_destSizeInBytes = std::filesystem::file_size(this->dest);
@@ -115,8 +142,17 @@ size_t FileCopy::bytes_remaining()
     return this->_numBytesReadToBuffer - this->_numBytesWrittenFromBuffer;
 }
 
+bool FileCopy::ready()
+{
+    /* Indicates if both files are open and ready to transfer */
+    return (this->_inStream.is_open() && this->_outStream.is_open());
+}
+
 void FileCopy::close()
 {
+    #if _DEBUG
+    std::cout << "Closing files..." << std::endl;
+    #endif
     this->_inStream.close();
     this->_outStream.close();
 }
@@ -273,17 +309,7 @@ size_t FileCopy::execute()
     std::cout << "Copying\n\t" << this->source.string();
     std::cout << "\n\tto\n\t" << this->dest.string();
     std::cout << std::endl;
-    #endif
-
-    #if _DEBUG
-    if (this->source.empty())
-    {
-        throw SOURCE_NOT_SET;
-    }
-    if (this->dest.empty())
-    {
-        throw DEST_NOT_SET;
-    }
+    _check_paths_not_empty();
     #endif
 
     if (this->_destSizeInBytes && !this->_overwrite)
@@ -320,34 +346,19 @@ size_t FileCopy::execute()
     }
 
     #if _DEBUG
-    if (this->_numBytesReadToBuffer != this->_numBytesWrittenFromBuffer)
-    {
-        throw READ_WRITE_MISMATCH;
-    }
+    _check_buffer_match();
     #endif
 
     /* Jump to here if existing file was skipped */
     copyComplete:
 
-    #if _DEBUG
-    std::cout << "Closing files..." << std::endl;
-    #endif
-
     close();
-
-    #if _DEBUG
-    std::cout << "Checking dest file size" << std::endl;
-    #endif
-
     get_dest_size();
 
     #ifdef _DEBUG
-    if (this->_sourceSizeInBytes != this->_destSizeInBytes)
-    {
-        throw FILESIZE_MISMATCH;
-    }
+    _check_file_size_match();
     #endif
-
+    
     /* Return the actual file size */
     return this->_destSizeInBytes;
 }

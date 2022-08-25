@@ -3,8 +3,7 @@ TODO
 - rename FileCopy::complete() to is_complete()
 
 - add BasicProgressBar to TreeSlinger (_progress)
-    - set to 0 before transfer starts
-    - add increment() and all that to TreeSlinger member functions
+    - check set(double) and set(size_t) functions and maybe rename them
 
 - add actual date and time stamp to TreeSlinger::_create_csv
 - allocate checksum buffers

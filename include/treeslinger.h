@@ -29,13 +29,14 @@ protected:
 public:
     bool _sourceHashed, _destHashed, _hashInline;
     int _parentPathLength;
-    std::atomic<int> _sourceQueueIndex;
-    std::mutex _sourceQueueLock, _progressLock;
     size_t _size, _transferred;
+    std::atomic<int> _sourceQueueIndex;
+    std::mutex _sourceQueueLock, _progressLock, _printLock;
     GatherDir _gatherer;
     BasicProgressBar<double> _progress;
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
+    std::vector<std::thread> _threads;
     // std::vector<char[16]> *_sourceChecksums, *_destChecksums;
     
     virtual std::filesystem::path _strip_parent_path(
@@ -45,14 +46,16 @@ public:
             std::filesystem::path sourceAsset
         );
     
+    virtual void reset();
     virtual void _create_copiers(int num);
     virtual int _num_copiers();
     virtual void _reset_copiers();
 
     virtual void _increment_progress(size_t chunk);
-    virtual int _get_next_source_file();
-    virtual void _run_copier(FileCopy* copier);
-    // virtual std::thread spawn_threads();
+    virtual int _get_next_source_index();
+    virtual void _sys_file_copy();
+    virtual void _run_copier(FileCopy* copier, const size_t totalNumFiles);
+    virtual void _spawn_thread(FileCopy* copier);
     
     virtual void _create_dest_dir_structure();
     virtual void _enumerate_dest_files();
@@ -90,7 +93,8 @@ public:
     
     virtual bool is_complete();
 
-    // virtual int execute();
+    virtual void _stage();
+    virtual size_t execute();
     // virtual bool verify();
     // virtual std::vector<char[16]>* get_checksums();
 };

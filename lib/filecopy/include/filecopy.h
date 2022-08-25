@@ -41,6 +41,9 @@ public:
 
     Buffer::RingBuffer<char> _buff;
 
+    void _check_paths_not_empty();
+    void _check_buffer_match();
+    void _check_file_size_match();
     std::filesystem::path _rename_dest();
 
 public:
@@ -61,8 +64,8 @@ public:
     size_t get_dest_size();
     size_t bytes_remaining();
     
-    void close();
     bool ready();
+    void close();
     bool complete();
     void reset();
 

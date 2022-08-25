@@ -5,9 +5,9 @@ _sourceHashed(false),
 _destHashed(false),
 _hashInline(true),
 _parentPathLength(0),
-_sourceQueueIndex(0),
 _size(0),
-_transferred(0)
+_transferred(0),
+_sourceQueueIndex(0)
 {
     this->_destFiles = new std::vector<std::filesystem::path>();
     // this->_sourceChecksums = new std::vector<char[16]>();
@@ -16,8 +16,41 @@ _transferred(0)
 
 TreeSlinger::~TreeSlinger()
 {
+    delete this->_destFiles;
+    for (FileCopy& copier: this->_copiers)
+    {
+        copier.close();
+    }
     // delete this->_sourceChecksums;
     // delete this->_destChecksums;
+}
+
+void TreeSlinger::reset()
+{
+    this->source = std::filesystem::path();
+    this->destination = std::filesystem::path();
+    this->_sourceHashed = false;
+    this->_destHashed = false;
+    this->_parentPathLength = 0;
+    this->_sourceQueueIndex = 0;
+    this->_size = 0;
+    this->_transferred = 0;
+    delete this->_destFiles;
+    this->_destFiles = new std::vector<std::filesystem::path>();
+    this->_sourceQueueIndex = 0;
+    _reset_copiers();
+    this->_threads.erase(this->_threads.begin(), this->_threads.end());
+    this->_progress.set_maximum(0);
+    this->_progress.set(0);
+    this->_progress.set_chunk_size(0);
+    
+    /*
+    - reset progress
+        - build in ::reset()
+    - reset gatherer
+    - kill threads with atomic bool kill flag or something
+    */
+
 }
 
 std::filesystem::path TreeSlinger::relative_dest(
@@ -99,6 +132,14 @@ inline std::filesystem::path TreeSlinger::_get_relative_dest(
 
 void TreeSlinger::_create_copiers(int num)
 {
+    #if _DEBUG
+    if (num < 1)
+    {
+        throw std::out_of_range("Num copiers must be >= 1");
+    }
+    #endif
+    this->_threads.reserve(num);
+    this->_copiers.reserve(num);
     for (int i(0); i < num; ++i)
     {
         this->_copiers.emplace_back(FileCopy());
@@ -118,7 +159,7 @@ void TreeSlinger::_reset_copiers()
     }
 }
 
-int TreeSlinger::_get_next_source_file()
+int TreeSlinger::_get_next_source_index()
 {
     const std::lock_guard<std::mutex> lock(this->_sourceQueueLock);
     return this->_sourceQueueIndex++;
@@ -130,36 +171,51 @@ void TreeSlinger::_increment_progress(size_t chunk)
     this->_progress.increment(chunk);
 }
 
-void TreeSlinger::_run_copier(FileCopy* copier)
+void TreeSlinger::_sys_file_copy()
 {
-    while (!this->is_complete())
+    /* Recursive file copy
+    Throws std::filesystem::filesystem_error if file exists */
+    std::filesystem::copy(
+            this->source,
+            this->destination,
+            std::filesystem::copy_options::recursive
+        );
+}
+
+void TreeSlinger::_run_copier(FileCopy* copier, const size_t totalNumFiles)
+{
+    /* Runs a single FileCopy object until all files are copied */
+    size_t bytesCopied, index(_get_next_source_index());
+    std::vector<std::filesystem::path>* sources = this->_gatherer.get();
+    while (index < totalNumFiles)
     {
-        int index(_get_next_source_file());
-        std::vector<std::filesystem::path>* sources = this->_gatherer.get();
         copier->reset();
+        std::this_thread::yield();
         copier->open_source(sources->at(index));
+        std::this_thread::yield();
         copier->open_dest(this->_destFiles->at(index));
         std::this_thread::yield();
-        size_t bytesCopied = copier->execute();
+        bytesCopied = copier->execute();
         _increment_progress(bytesCopied);
+        std::this_thread::yield();
+        index = _get_next_source_index();
     }
 }
 
-// std::thread TreeSlinger::spawn_threads()
-// {
-//     return std::thread(&TreeSlinger::_run_copier, this);
-// }
+void TreeSlinger::_spawn_thread(FileCopy* copier)
+{
+    this->_threads.emplace_back(std::thread(
+            &TreeSlinger::_run_copier,
+            this,
+            copier,
+            this->_gatherer.num_files()
+        ));
+}
 
 void TreeSlinger::_create_dest_dir_structure()
 {
-    #if _DEBUG
-    std::cout << "Redirecting directories " << std::endl;
-    #endif
     for (const std::filesystem::path p: *(this->_gatherer.get_directories()))
     {
-        #if _DEBUG
-        std::cout << "Redirecting directory " << p << " to destination" << std::endl;
-        #endif
         std::filesystem::path redirected(_get_relative_dest(p));
         #if _DEBUG
         std::cout << "Creating directory " << redirected << std::endl;
@@ -352,10 +408,17 @@ bool TreeSlinger::is_complete()
     return this->_progress.is_complete();
 }
 
-// int TreeSlinger::execute()
-// {
-//     _create_dest_dir_structure();
-// }
+void TreeSlinger::_stage()
+{
+    _create_dest_dir_structure();
+    _enumerate_dest_files();
+    _allocate_checksums();
+}
+
+size_t TreeSlinger::execute()
+{
+
+}
 
 // bool TreeSlinger::verify()
 // {

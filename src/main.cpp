@@ -159,50 +159,58 @@ int main(int argc, char** argv)
 
     std::chrono::high_resolution_clock::time_point start, end;
     std::chrono::high_resolution_clock::duration duration;
-    start = std::chrono::high_resolution_clock::now();
 
     std::cout << "Running..." << std::endl;
 
     TreeSlinger t;
     std::filesystem::path src("../example_data");
     std::filesystem::path dest("../build");
-    BasicProgressBar<double> bar;
-    char status[41];
-    size_t progressBarWidth = sizeof(status) - 1;
     
     std::cout << "running t.set_source(src);" << std::endl;
     t.set_source(src);
     std::cout << "running t.set_destination(dest);" << std::endl;
     t.set_destination(dest);
+
     std::cout << "running t.set_hash_algorithm('md5');" << std::endl;
     t.set_hash_algorithm("md5");
-    std::cout << "running t._create_copiers(1);" << std::endl;
-    t._create_copiers(1);
-    std::cout << "running t._create_dest_dir_structure();" << std::endl;
-    t._create_dest_dir_structure();
-    std::cout << "running t._enumerate_dest_files();" << std::endl;
-    t._enumerate_dest_files();
-    std::cout << "running t._allocate_checksums();" << std::endl;
-    t._allocate_checksums();
-    std::cout << "running t.set_hash_inline(INLINEHASH);" << std::endl;
+    std::cout << "running t._create_copiers(4);" << std::endl;
+    t._create_copiers(4);
+    std::cout << "running t.set_hash_inline(" << INLINEHASH << ");" << std::endl;
     t.set_hash_inline(INLINEHASH);
-    std::cout << "running size_t totalSize = t._get_total_size();" << std::endl;
-    size_t totalSize = t._get_total_size();
-    std::cout << "total size is " << totalSize << " bytes" << std::endl;
-    std::cout << "running bar.set_maximum(totalSize);" << std::endl;
-    bar.set_maximum(totalSize);
-    std::cout << "running size_t numFiles(t._gatherer.num_files());" << std::endl;
-    size_t numFiles(t._gatherer.num_files());
-    std::cout << "running std::vector<std::filesystem::path>* sources(t._gatherer.get());" << std::endl;
-    std::vector<std::filesystem::path>* sources(t._gatherer.get());
+    
+    std::cout << "running t.stage();" << std::endl;
+    t._stage();
 
-    t._run_copier(&(t._copiers[0]));
+    const size_t totalNumFiles = t._gatherer.num_files();
+    std::cout << "There are " << totalNumFiles;
+    std::cout << " source files" << std::endl;
+
+    std::cout << "Starting timer..." << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+
+    /* Recursive file copy bypassing ring buffer */
+    // t._sys_file_copy();
+
+    /* Sequential file copy using a single FileCopy object */
+    t._run_copier(&(t._copiers[0]), totalNumFiles);
+
+    /* Simultaneous file copy using threads */
+    // for (int i(0); i < t._num_copiers(); ++i)
+    // {
+    //     t._spawn_thread(&(t._copiers[i]));
+    // }
+    // for (size_t i(0); i < t._threads.size(); ++i)
+    // {
+    //     t._threads[i].join();
+    // }
+
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Stopped timer" << std::endl;
 
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();
     std::cout << "Transfer complete" << std::endl;
 
-    end = std::chrono::high_resolution_clock::now();
     duration = end - start;
     std::cout << "Transfer took ";
     std::cout << std::fixed << std::setprecision(2);
