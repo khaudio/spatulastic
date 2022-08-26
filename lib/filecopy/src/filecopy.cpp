@@ -357,8 +357,9 @@ size_t FileCopy::execute()
 
     #ifdef _DEBUG
     _check_file_size_match();
+    std::cout << "Execute completed" << std::endl;
     #endif
-    
+
     /* Return the actual file size */
     return this->_destSizeInBytes;
 }

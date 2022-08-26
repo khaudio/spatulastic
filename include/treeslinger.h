@@ -5,13 +5,13 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <cstring>
 
 #include "filecopy.h"
 #include "gatherdir.h"
 #include "progressbar.h"
 #include "ringbuffer.h"
 #include "hashlibpp.h"
-
 
 enum treeslinger_err
 {
@@ -21,6 +21,7 @@ enum treeslinger_err
     PARENT_PATH_NOT_SET = 1004,
     SOURCE_NOT_HASHED = 1005,
     DEST_NOT_HASHED = 1006,
+    FILE_NUM_MISMATCH = 1007,
 };
 
 class TreeSlinger
@@ -37,7 +38,7 @@ public:
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
     std::vector<std::thread> _threads;
-    // std::vector<char[16]> *_sourceChecksums, *_destChecksums;
+    std::vector<char*> _sourceChecksums, _destChecksums;
     
     virtual std::filesystem::path _strip_parent_path(
             std::filesystem::path asset
@@ -94,9 +95,10 @@ public:
     virtual bool is_complete();
 
     virtual void _stage();
-    virtual size_t execute();
-    // virtual bool verify();
-    // virtual std::vector<char[16]>* get_checksums();
+    virtual bool verify();
+    // virtual size_t execute();
+    virtual std::vector<char*> get_source_checksums() const;
+    virtual std::vector<char*> get_dest_checksums() const;
 };
 
 #endif

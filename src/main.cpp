@@ -1,15 +1,8 @@
-// #include "cmakeconfig.h"
-#include "treeslinger.h"
+#include "spatulastic.h"
 
 /* Whether to hash the source file
 while it's being moved in the ring buffer */
 #define INLINEHASH                  false
-
-
-void hash_data(FileCopy* fc, MD5* hasher);
-std::string get_checksum_from_hasher(MD5* hasher, HL_MD5_CTX* hasherCtx);
-void execute_transfer(FileCopy* fc);
-int main(int argc, char** argv);
 
 
 void hash_data(FileCopy* fc, MD5* hasher, HL_MD5_CTX* hasherCtx)
@@ -174,7 +167,7 @@ int main(int argc, char** argv)
     std::cout << "running t.set_hash_algorithm('md5');" << std::endl;
     t.set_hash_algorithm("md5");
     std::cout << "running t._create_copiers(4);" << std::endl;
-    t._create_copiers(4);
+    t._create_copiers(1);
     std::cout << "running t.set_hash_inline(" << INLINEHASH << ");" << std::endl;
     t.set_hash_inline(INLINEHASH);
     
@@ -203,6 +196,18 @@ int main(int argc, char** argv)
     // {
     //     t._threads[i].join();
     // }
+
+    t.verify();
+
+    for (int i(0); i < totalNumFiles; ++i)
+    {
+        std::cout << t._destFiles->at(i).string() << "\n\t";
+        for (int j(0); j < 16; ++j)
+        {
+            std::cout << t._destChecksums[i][j];
+        }
+        std::cout << std::endl;
+    }
 
     end = std::chrono::high_resolution_clock::now();
     std::cout << "Stopped timer" << std::endl;
