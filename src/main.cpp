@@ -199,18 +199,14 @@ int main(int argc, char** argv)
 
     t.verify();
 
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Stopped timer" << std::endl;
+
     for (int i(0); i < totalNumFiles; ++i)
     {
         std::cout << t._destFiles->at(i).string() << "\n\t";
-        for (int j(0); j < 16; ++j)
-        {
-            std::cout << t._destChecksums[i][j];
-        }
-        std::cout << std::endl;
+        std::cout << t._destChecksums->at(i) << std::endl;
     }
-
-    end = std::chrono::high_resolution_clock::now();
-    std::cout << "Stopped timer" << std::endl;
 
     std::cout << "running t._create_csv();" << std::endl;
     t._create_csv();

@@ -22,6 +22,7 @@ enum treeslinger_err
     SOURCE_NOT_HASHED = 1005,
     DEST_NOT_HASHED = 1006,
     FILE_NUM_MISMATCH = 1007,
+    CHECKSUM_LIST_LENGTH_MISMATCH = 1008,
 };
 
 class TreeSlinger
@@ -38,7 +39,7 @@ public:
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
     std::vector<std::thread> _threads;
-    std::vector<char*> _sourceChecksums, _destChecksums;
+    std::vector<std::string> *_sourceChecksums, *_destChecksums;
     
     virtual std::filesystem::path _strip_parent_path(
             std::filesystem::path asset
@@ -97,8 +98,8 @@ public:
     virtual void _stage();
     virtual bool verify();
     // virtual size_t execute();
-    virtual std::vector<char*> get_source_checksums() const;
-    virtual std::vector<char*> get_dest_checksums() const;
+    virtual std::vector<std::string>* get_source_checksums() const;
+    virtual std::vector<std::string>* get_dest_checksums() const;
 };
 
 #endif

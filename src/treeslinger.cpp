@@ -10,20 +10,19 @@ _transferred(0),
 _sourceQueueIndex(0)
 {
     this->_destFiles = new std::vector<std::filesystem::path>();
+    this->_sourceChecksums = new std::vector<std::string>();
+    this->_destChecksums = new std::vector<std::string>();
 }
 
 TreeSlinger::~TreeSlinger()
 {
     delete this->_destFiles;
+    delete this->_sourceChecksums;
+    delete this->_destChecksums;
     // for (FileCopy& copier: this->_copiers)
     // {
     //     copier.close();
     // }
-    for (size_t i(0); i < this->_gatherer.num_files(); ++i)
-    {
-        delete this->_sourceChecksums[i];
-        delete this->_destChecksums[i];
-    }
 }
 
 void TreeSlinger::reset()
@@ -44,6 +43,18 @@ void TreeSlinger::reset()
     this->_progress.set_maximum(0);
     this->_progress.set(0);
     this->_progress.set_chunk_size(0);
+    size_t checksumListLength(this->_sourceChecksums->size());
+    #if _DEBUG
+    if (this->_destChecksums->size() != checksumListLength)
+    {
+        throw CHECKSUM_LIST_LENGTH_MISMATCH;
+    }
+    #endif
+    for (size_t i(0); i < checksumListLength; ++i)
+    {
+        this->_sourceChecksums->at(i) = std::string();
+        this->_destChecksums->at(i) = std::string();
+    }
     
     /*
     - reset progress
@@ -250,21 +261,28 @@ size_t TreeSlinger::_get_total_size()
 
 void TreeSlinger::_allocate_checksums()
 {
+    #if _DEBUG
+    if (_checksums_allocated())
+    {
+        std::cout << "Checksum lists already allocated; returning";
+        return;
+    }
+    #endif
     size_t numFiles(this->_gatherer.num_files());
-    this->_sourceChecksums.reserve(numFiles);
-    this->_destChecksums.reserve(numFiles);
+    this->_sourceChecksums->reserve(numFiles);
+    this->_destChecksums->reserve(numFiles);
     for (size_t i(0); i < numFiles; ++i)
     {
-        this->_sourceChecksums.emplace_back(new char[16]());
-        this->_destChecksums.emplace_back(new char[16]());
+        this->_sourceChecksums->emplace_back(std::string());
+        this->_destChecksums->emplace_back(std::string());
     }
 }
 
 bool TreeSlinger::_checksums_allocated()
 {
     return (
-            (this->_sourceChecksums.size() > 0)
-            && (this->_destChecksums.size() > 0)
+            (this->_sourceChecksums->size() > 0)
+            && (this->_destChecksums->size() > 0)
         );
 
     return true;
@@ -430,22 +448,61 @@ bool TreeSlinger::verify()
     #endif
 
     md5wrapper hasher;
-    int index(0);
-    
-    for (const std::filesystem::path& p: *(this->_destFiles))
+    size_t index(0), totalNumFiles = this->_gatherer.num_files();
+    std::vector<std::filesystem::path>* sources = this->_gatherer.get();
+    while (index < totalNumFiles)
     {
-        memcpy(
-                this->_destChecksums[index++],
-                hasher.getHashFromFile(p.string()).c_str(),
-                16
+        #if _DEBUG
+        std::cout << "Hashing file ";
+        std::cout << sources->at(index).string() << std::endl;
+        #endif
+        this->_sourceChecksums->at(index) = hasher.getHashFromFile(\
+                sources->at(index).string()
             );
+        ++index;
+    }
+
+    index = 0;
+    while (index < totalNumFiles)
+    {
+        #if _DEBUG
+        std::cout << "Hashing file ";
+        std::cout << this->_destFiles->at(index).string() << std::endl;
+        #endif
+        this->_destChecksums->at(index) = hasher.getHashFromFile(
+                this->_destFiles->at(index).string()
+            );
+        ++index;
+    }
+    
+    index = 0;
+    while (index < totalNumFiles)
+    {
+        if (
+                this->_sourceChecksums->at(index)
+                != this->_destChecksums->at(index)
+            )
+        {
+            #if _DEBUG
+            std::cerr << "Checkum mismatch for files\n";
+            std::cerr << sources->at(index).string();
+            std::cerr << "\n\t" << this->_sourceChecksums->at(index);
+            std::cerr << "\nand\n";
+            std::cerr << this->_destFiles->at(index).string();
+            std::cerr << "\n\t" << this->_destChecksums->at(index);
+            std::cerr << std::endl;
+            throw CHECKSUM_MISMATCH;
+            #endif
+            return false;
+        }
+        ++index;
     }
 
     #if _DEBUG
     std::cout << "Verified" << std::endl;
     #endif
     
-    return 1;
+    return true;
 }
 
 // size_t TreeSlinger::execute()
@@ -453,12 +510,12 @@ bool TreeSlinger::verify()
 
 // }
 
-std::vector<char*> TreeSlinger::get_source_checksums() const
+std::vector<std::string>* TreeSlinger::get_source_checksums() const
 {
     return this->_sourceChecksums;
 }
 
-std::vector<char*> TreeSlinger::get_dest_checksums() const
+std::vector<std::string>* TreeSlinger::get_dest_checksums() const
 {
     return this->_destChecksums;
 }
