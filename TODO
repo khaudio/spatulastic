@@ -1,14 +1,10 @@
 TODO
 
-- fix hashing buffers since its more than 16 chars OUTPUT
-    - 32 chars readable but not that many bytes
-
 - thread hashing per destination
 
 - rename FileCopy::complete() to is_complete()
 
-- add BasicProgressBar to TreeSlinger (_progress)
-    - check set(double) and set(size_t) functions and maybe rename them
+- check BasicProgressBar::set(double) and set(size_t) functions and maybe rename them
 
 - add actual date and time stamp to TreeSlinger::_create_csv
 - allocate checksum buffers
