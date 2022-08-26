@@ -2,6 +2,7 @@
 #define SPATULASTIC_H
 
 #include "treeslinger.h"
+#include "timer.h"
 
 void hash_data(
         FileCopy* fc,

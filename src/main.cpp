@@ -150,8 +150,7 @@ int main(int argc, char** argv)
     std::cout << "Debug mode enabled" << std::endl;
     #endif
 
-    std::chrono::high_resolution_clock::time_point start, end;
-    std::chrono::high_resolution_clock::duration duration;
+    Timer timer;
 
     std::cout << "Running..." << std::endl;
 
@@ -178,8 +177,7 @@ int main(int argc, char** argv)
     std::cout << "There are " << totalNumFiles;
     std::cout << " source files" << std::endl;
 
-    std::cout << "Starting timer..." << std::endl;
-    start = std::chrono::high_resolution_clock::now();
+    timer.start();
 
     /* Recursive file copy bypassing ring buffer */
     // t._sys_file_copy();
@@ -197,10 +195,13 @@ int main(int argc, char** argv)
     //     t._threads[i].join();
     // }
 
-    t.verify();
+    /* Single threaded hashing */
+    // t.verify();
 
-    end = std::chrono::high_resolution_clock::now();
-    std::cout << "Stopped timer" << std::endl;
+    /* Multithreaded hashing */
+    t.verify_threaded(8);
+
+    timer.stop();
 
     for (int i(0); i < totalNumFiles; ++i)
     {
@@ -212,16 +213,12 @@ int main(int argc, char** argv)
     t._create_csv();
     std::cout << "Transfer complete" << std::endl;
 
-    duration = end - start;
-    std::cout << "Transfer took ";
-    std::cout << std::fixed << std::setprecision(2);
-    std::cout << static_cast<double>(duration.count()) / 1000000;
-    std::cout << " ms" << std::endl;
+    timer.print_s("Transfer");
+
     std::ofstream log;
     log.open("log.txt", std::ios::app);
     log << "Source hashed " << (INLINEHASH ? "inline" : "after ") << "\t";
-    log << (static_cast<double>(duration.count()) / 1000000);
-    log  << " ms" << std::endl;
+    log << timer.get_ms() << " ms" << std::endl;
     log.close();
     std::cout << "Spatulastic out!" << std::endl;
 

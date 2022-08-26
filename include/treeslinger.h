@@ -29,16 +29,27 @@ class TreeSlinger
 {
 protected:
 public:
-    bool _sourceHashed, _destHashed, _hashInline;
+    bool
+        _sourceHashed,
+        _destHashed,
+        _hashInline;
     int _parentPathLength;
-    size_t _size, _transferred;
-    std::atomic<int> _sourceQueueIndex;
-    std::mutex _sourceQueueLock, _progressLock, _printLock;
+    size_t
+        _size,
+        _transferred;
+    std::atomic<int>
+        _sourceQueueIndex,
+        _destQueueIndex;
+    std::mutex
+        _sourceQueueLock,
+        _destQueueLock,
+        _progressLock,
+        _printLock;
     GatherDir _gatherer;
     BasicProgressBar<double> _progress;
     std::vector<FileCopy> _copiers;
     std::vector<std::filesystem::path>* _destFiles;
-    std::vector<std::thread> _threads;
+    std::vector<std::thread> _threads, _sourceHasherThreads, _destHasherThreads;
     std::vector<std::string> *_sourceChecksums, *_destChecksums;
     
     virtual std::filesystem::path _strip_parent_path(
@@ -55,9 +66,16 @@ public:
 
     virtual void _increment_progress(size_t chunk);
     virtual int _get_next_source_index();
+    virtual int _get_next_dest_index();
+
     virtual void _sys_file_copy();
     virtual void _run_copier(FileCopy* copier, const size_t totalNumFiles);
     virtual void _spawn_thread(FileCopy* copier);
+
+    virtual void _run_source_hasher(const size_t totalNumFiles);
+    virtual void _run_dest_hasher(const size_t totalNumFiles);
+    virtual void _spawn_source_hasher_thread();
+    virtual void _spawn_dest_hasher_thread();
     
     virtual void _create_dest_dir_structure();
     virtual void _enumerate_dest_files();
@@ -87,6 +105,9 @@ public:
     virtual void set_hash_algorithm(const char* algo);
     virtual void set_hash_inline(bool hashInline = true);
     
+    virtual std::vector<std::filesystem::path>* get_source_files();
+    virtual std::vector<std::filesystem::path>* get_dest_files();
+
     virtual size_t _copy_file(
             FileCopy* copier,
             std::filesystem::path srcAsset,
@@ -97,6 +118,7 @@ public:
 
     virtual void _stage();
     virtual bool verify();
+    virtual bool verify_threaded(int numThreads);
     // virtual size_t execute();
     virtual std::vector<std::string>* get_source_checksums() const;
     virtual std::vector<std::string>* get_dest_checksums() const;

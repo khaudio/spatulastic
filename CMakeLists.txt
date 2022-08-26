@@ -14,9 +14,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/filecopy)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/gatherdir)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/progressbar)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/hashlib2plus)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/timer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/templateinstantiator)
 
-list(APPEND LIBRARIES filecopy gatherdir progressbar hashlib2plus templateinstantiator)
+list(APPEND LIBRARIES filecopy gatherdir progressbar hashlib2plus timer templateinstantiator)
 
 add_executable(${PROJECT_NAME}
     src/treeslinger.cpp
@@ -25,19 +26,16 @@ add_executable(${PROJECT_NAME}
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
-        -lpthread
         $<$<CONFIG:Debug>:-O0 -g -Wall>
         $<$<CONFIG:Release>:-O2>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g>
     
     PUBLIC
-        -lpthread
         $<$<CONFIG:Debug>:-O0 -g -Wall>
         $<$<CONFIG:Release>:-O2>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g>
 
     INTERFACE
-        -lpthread
         $<$<CONFIG:Debug>:-O0 -g -Wall>
         $<$<CONFIG:Release>:-O2>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g>

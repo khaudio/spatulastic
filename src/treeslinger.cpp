@@ -7,7 +7,8 @@ _hashInline(true),
 _parentPathLength(0),
 _size(0),
 _transferred(0),
-_sourceQueueIndex(0)
+_sourceQueueIndex(0),
+_destQueueIndex(0)
 {
     this->_destFiles = new std::vector<std::filesystem::path>();
     this->_sourceChecksums = new std::vector<std::string>();
@@ -33,13 +34,15 @@ void TreeSlinger::reset()
     this->_destHashed = false;
     this->_parentPathLength = 0;
     this->_sourceQueueIndex = 0;
+    this->_destQueueIndex = 0;
     this->_size = 0;
     this->_transferred = 0;
     delete this->_destFiles;
     this->_destFiles = new std::vector<std::filesystem::path>();
-    this->_sourceQueueIndex = 0;
     _reset_copiers();
     this->_threads.erase(this->_threads.begin(), this->_threads.end());
+    this->_sourceHasherThreads.erase(this->_threads.begin(), this->_threads.end());
+    this->_destHasherThreads.erase(this->_threads.begin(), this->_threads.end());
     this->_progress.set_maximum(0);
     this->_progress.set(0);
     this->_progress.set_chunk_size(0);
@@ -177,6 +180,12 @@ int TreeSlinger::_get_next_source_index()
     return this->_sourceQueueIndex++;
 }
 
+int TreeSlinger::_get_next_dest_index()
+{
+    const std::lock_guard<std::mutex> lock(this->_destQueueLock);
+    return this->_destQueueIndex++;
+}
+
 void TreeSlinger::_increment_progress(size_t chunk)
 {
     const std::lock_guard<std::mutex> lock(this->_progressLock);
@@ -220,6 +229,57 @@ void TreeSlinger::_spawn_thread(FileCopy* copier)
             &TreeSlinger::_run_copier,
             this,
             copier,
+            this->_gatherer.num_files()
+        ));
+}
+
+void TreeSlinger::_run_source_hasher(const size_t totalNumFiles)
+{
+    size_t index(_get_next_source_index());
+    md5wrapper hasher;
+    std::string checksum;
+    std::vector<std::filesystem::path>* sources = this->_gatherer.get();
+    while (index < totalNumFiles)
+    {
+        this->_sourceChecksums->at(index) = hasher.getHashFromFile(
+                sources->at(index).string()
+            );
+        std::this_thread::yield();
+        index = _get_next_source_index();
+        std::this_thread::yield();
+    }
+}
+
+void TreeSlinger::_run_dest_hasher(const size_t totalNumFiles)
+{
+    size_t index(_get_next_dest_index());
+    md5wrapper hasher;
+    std::string checksum;
+    while (index < totalNumFiles)
+    {
+        this->_destChecksums->at(index) = hasher.getHashFromFile(
+                this->_destFiles->at(index).string()
+            );
+        std::this_thread::yield();
+        index = _get_next_dest_index();
+        std::this_thread::yield();
+    }
+}
+
+void TreeSlinger::_spawn_source_hasher_thread()
+{
+    this->_sourceHasherThreads.emplace_back(std::thread(
+            &TreeSlinger::_run_source_hasher,
+            this,
+            this->_gatherer.num_files()
+        ));
+}
+
+void TreeSlinger::_spawn_dest_hasher_thread()
+{
+    this->_destHasherThreads.emplace_back(std::thread(
+            &TreeSlinger::_run_dest_hasher,
+            this,
             this->_gatherer.num_files()
         ));
 }
@@ -377,6 +437,16 @@ void TreeSlinger::set_hash_inline(bool hashInline)
     this->_hashInline = true;
 }
 
+std::vector<std::filesystem::path>* TreeSlinger::get_source_files()
+{
+    return this->_gatherer.get();
+}
+
+std::vector<std::filesystem::path>* TreeSlinger::get_dest_files()
+{
+    return this->_destFiles;
+}
+
 size_t TreeSlinger::_copy_file(
         FileCopy* copier,
         std::filesystem::path srcAsset,
@@ -456,7 +526,7 @@ bool TreeSlinger::verify()
         std::cout << "Hashing file ";
         std::cout << sources->at(index).string() << std::endl;
         #endif
-        this->_sourceChecksums->at(index) = hasher.getHashFromFile(\
+        this->_sourceChecksums->at(index) = hasher.getHashFromFile(
                 sources->at(index).string()
             );
         ++index;
@@ -504,6 +574,62 @@ bool TreeSlinger::verify()
     
     return true;
 }
+
+bool TreeSlinger::verify_threaded(int numThreads)
+{
+    #if _DEBUG
+    if (this->_gatherer.num_files() != this->_destFiles->size())
+    {
+        throw FILE_NUM_MISMATCH;
+    }
+    std::cout << "Verifying..." << std::endl;
+    #endif
+
+    this->_sourceQueueIndex = 0;
+    this->_destQueueIndex = 0;
+    for (int i(0); i < numThreads; ++i)
+    {
+        _spawn_source_hasher_thread();
+        _spawn_dest_hasher_thread();
+    }
+
+    for (int i(0); i < numThreads; ++i)
+    {
+        this->_sourceHasherThreads[i].join();
+        this->_destHasherThreads[i].join();
+    }
+    
+    size_t index(0), totalNumFiles = this->_gatherer.num_files();
+    while (index < totalNumFiles)
+    {
+        if (
+                this->_sourceChecksums->at(index)
+                != this->_destChecksums->at(index)
+            )
+        {
+            #if _DEBUG
+            std::vector<std::filesystem::path>* sources = this->_gatherer.get();
+            std::cerr << "Checkum mismatch for files\n";
+            std::cerr << sources->at(index).string();
+            std::cerr << "\n\t" << this->_sourceChecksums->at(index);
+            std::cerr << "\nand\n";
+            std::cerr << this->_destFiles->at(index).string();
+            std::cerr << "\n\t" << this->_destChecksums->at(index);
+            std::cerr << std::endl;
+            throw CHECKSUM_MISMATCH;
+            #endif
+            return false;
+        }
+        ++index;
+    }
+
+    #if _DEBUG
+    std::cout << "Verified" << std::endl;
+    #endif
+    
+    return true;
+}
+
 
 // size_t TreeSlinger::execute()
 // {
